@@ -1,6 +1,7 @@
 # Color Matching Using Hypernetwork-Based Kolmogorov-Arnold Networks
 
-[![abstract](figures/abstract.png){ width=400px }](figures/abstract.png)
+<img scr='figures/abstract.png' width='50%' />
+
 
 ### Abstract
 
