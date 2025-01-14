@@ -11,8 +11,8 @@ from torchvision.transforms.v2 import (
 from torch.utils.data import DataLoader
 from typing import Tuple
 from .img_dataset import Image2ImageDataset
-from color_transfer.core import Logger
-from color_transfer.ml.transforms.pair_trransform import PairTransform
+from cm_kan.core import Logger
+from cm_kan.ml.transforms.pair_trransform import PairTransform
 
 
 class FiveKImgDataModule(L.LightningDataModule):

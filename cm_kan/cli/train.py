@@ -14,9 +14,9 @@ from lightning.pytorch.callbacks import (
     RichProgressBar,
     LearningRateMonitor,
 )
-from color_transfer.ml.callbacks import GenerateCallback
+from cm_kan.ml.callbacks import GenerateCallback
 from lightning.pytorch.loggers import CSVLogger
-from color_transfer import cli
+from cm_kan import cli
 
 
 def add_parser(subparser: argparse) -> None:
@@ -59,7 +59,7 @@ def train(args: argparse.Namespace) -> None:
         logger=logger,
         default_root_dir=os.path.join(config.save_dir, config.experiment),
         max_epochs=config.pipeline.params.epochs,
-        devices=1,
+        accelerator=config.accelerator,
         callbacks=[
             ModelCheckpoint(
                 filename="{epoch}-{val_de:.2f}",

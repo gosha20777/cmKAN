@@ -9,9 +9,9 @@ from typing import List
 import imageio
 import asyncio
 from .utils import concurrent
-from color_transfer import cli
+from cm_kan import cli
 
-THREADS = 1
+THREADS = 8
 
 
 def add_parser(subparser: argparse) -> None:

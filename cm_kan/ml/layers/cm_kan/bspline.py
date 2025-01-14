@@ -1,7 +1,6 @@
 import torch
+
 # Helper functions for computing B splines over a grid
-
-
 def compute_bspline(x: torch.Tensor, grid: torch.Tensor, k: int):
     """
     For a given grid with G_1 intervals and spline order k, we *recursively* compute
@@ -28,36 +27,36 @@ def compute_bspline(x: torch.Tensor, grid: torch.Tensor, k: int):
 
     return bases
 
-
-def coef2curve (x : torch.Tensor, grid: torch.Tensor, coefs: torch.Tensor, k: int):
+def coef2curve (x : torch.Tensor, grid: torch.Tensor, coefs: torch.Tensor, k: int, device:torch.device):
     """
     For a given (batch of) x, control points (grid), and B-spline coefficients,
     evaluate and return x on the B-spline function.
     """
-    bases = compute_bspline(x, grid, k)
+    bases = compute_bspline(x, grid, k, device)
     spline = torch.sum(bases * coefs[None, ...], dim=-1)
     return spline
 
 
-def generate_control_points(
-    low_bound: float,
-    up_bound: float,
-    in_dim: int,
-    out_dim: int,
-    spline_order: int,
-    grid_size: int,
-):
-    """
-    Generate a vector of {grid_size} equally spaced points in the interval [low_bound, up_bound] and broadcast (out_dim, in_dim) copies.
-    To account for B-splines of order k, using the same spacing, generate an additional
-    k points on each side of the interval. See 2.4 in original paper for details.
-    """
+if __name__ == "__main__":
+    print("B Spline Unit Tests")
+    
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # vector of size [grid_size + 2 * spline_order + 1]
-    spacing = (up_bound - low_bound) / grid_size
-    grid = torch.arange(-spline_order, grid_size + spline_order + 1)
-    grid = grid * spacing + low_bound
+    bsz = 2
+    spline_order = 3
+    in_dim = 5
+    out_dim = 7
+    grid_size = 11
+    grid_range = [-1.,1]
 
-    # [out_dim, in_dim, G + 2k + 1]
+    x = torch.ones(bsz, in_dim) / 0.8
+
+    spacing = (grid_range[1] - grid_range[0]) / grid_size
+    grid = torch.arange(-spline_order, grid_size + spline_order + 1, device=device) * spacing + grid_range[0]
+    # Generate (out, in) copies of equally spaced points on [a, b]
     grid = grid[None, None, ...].expand(out_dim, in_dim, -1).contiguous()
-    return grid
+
+    print('x', x)
+    print('grid', grid)
+
+    compute_bspline(x, grid, spline_order, device)

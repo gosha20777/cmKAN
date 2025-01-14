@@ -2,38 +2,37 @@ import torch
 from torch import nn
 import lightning as L
 from torch import optim
-from ..models import SimpleKanModel
-from color_transfer.core import Logger
-from ..utils.process import (
-    feature_to_colors,
-    colors_to_feature
-)
+from ..models import CmKAN
+from cm_kan.core import Logger
 from ..metrics import (
     PSNR,
     SSIM,
-    DeltaE
+    DeltaE,
 )
 
 
-class DefaultPipeline(L.LightningModule):
+class PairBasedPipeline(L.LightningModule):
     def __init__(self,
-        model: SimpleKanModel,
+        model: CmKAN,
         optimiser: str = 'adam',
         lr: float = 1e-3,
         weight_decay: float = 0,
     ) -> None:
-        super(DefaultPipeline, self).__init__()
+        super(PairBasedPipeline, self).__init__()
 
         self.model = model
         self.optimizer_type = optimiser
         self.lr = lr
         self.weight_decay = weight_decay
         self.mae_loss = nn.L1Loss(reduction='mean')
+        self.ssim_loss = SSIM(data_range=(0, 1))
         self.de_metric = DeltaE()
         self.ssim_metric = SSIM(data_range=(0, 1))
         self.psnr_metric = PSNR(data_range=(0, 1))
         
         self.save_hyperparameters(ignore=['model'])
+
+        raise NotImplementedError('PairBasedPipeline is not implemented yet.')
     
     def setup(self, stage: str) -> None:
         '''
@@ -56,7 +55,7 @@ class DefaultPipeline(L.LightningModule):
                     nn.init.normal_(m.weight, 0, 0.01)
                     nn.init.constant_(m.bias, 0)
         
-        Logger.info('Initialized model weights with default pipeline.')
+        Logger.info('Initialized model weights with [bold green]Supervised[/bold green] pipeline.')
 
     def configure_optimizers(self):
         if self.optimizer_type == 'adam':
@@ -71,18 +70,18 @@ class DefaultPipeline(L.LightningModule):
         return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": "val_loss"}
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x, shape = feature_to_colors(x)
         pred = self.model(x)
-        pred = colors_to_feature(pred, shape)
         return pred
 
     def training_step(self, batch, batch_idx):
         inputs, targets = batch
         predictions = self(inputs)
         mae_loss = self.mae_loss(predictions, targets)
+        ssim_loss = self.ssim_loss(predictions, targets)
+        loss = mae_loss + (1 - ssim_loss) * 0.15
 
-        self.log('train_loss', mae_loss, prog_bar=True, logger=True)
-        return {'loss': mae_loss}
+        self.log('train_loss', loss, prog_bar=True, logger=True)
+        return {'loss': loss}
     
     def validation_step(self, batch, batch_idx):
         inputs, targets = batch

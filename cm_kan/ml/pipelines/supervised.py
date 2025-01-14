@@ -2,25 +2,23 @@ import torch
 from torch import nn
 import lightning as L
 from torch import optim
-from ..models import SepKAN2D
-from color_transfer.core import Logger
+from ..models import CmKAN
+from cm_kan.core import Logger
 from ..metrics import (
     PSNR,
     SSIM,
     DeltaE,
 )
-from ..utils.colors import rgb_to_lab
-from ..losses.hist_loss import HistLoss
 
 
-class SepKan2DPipeline(L.LightningModule):
+class SupervisedPipeline(L.LightningModule):
     def __init__(self,
-        model: SepKAN2D,
+        model: CmKAN,
         optimiser: str = 'adam',
         lr: float = 1e-3,
         weight_decay: float = 0,
     ) -> None:
-        super(SepKan2DPipeline, self).__init__()
+        super(SupervisedPipeline, self).__init__()
 
         self.model = model
         self.optimizer_type = optimiser
@@ -55,7 +53,7 @@ class SepKan2DPipeline(L.LightningModule):
                     nn.init.normal_(m.weight, 0, 0.01)
                     nn.init.constant_(m.bias, 0)
         
-        Logger.info('Initialized model weights with [bold green]SepKan2D[/bold green] pipeline.')
+        Logger.info('Initialized model weights with [bold green]Supervised[/bold green] pipeline.')
 
     def configure_optimizers(self):
         if self.optimizer_type == 'adam':
@@ -104,13 +102,8 @@ class SepKan2DPipeline(L.LightningModule):
         panr_metric = self.psnr_metric(predictions, targets)
         ssim_metric = self.ssim_metric(predictions, targets)
         de_metric = self.de_metric(predictions, targets)
-
-        l_predictions = rgb_to_lab(predictions)[:, 0, :, :] / 100
-        l_targets = rgb_to_lab(targets)[:, 0, :, :] / 100
-        l_panr_metric = self.psnr_metric(l_predictions, l_targets)
         
         self.log('test_panr', panr_metric, prog_bar=True, logger=True)
-        self.log('test_l_panr', l_panr_metric, prog_bar=True, logger=True)
         self.log('test_ssim', ssim_metric, prog_bar=True, logger=True)
         self.log('test_de', de_metric, prog_bar=True, logger=True)
         self.log('test_loss', mae_loss, prog_bar=True, logger=True)

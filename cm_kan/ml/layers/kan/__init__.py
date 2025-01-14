@@ -1,1 +1,0 @@
-from .kan import KANLayer

@@ -9,7 +9,7 @@ from typing import List
 import imageio
 from .utils import concurrent
 from ..ml.transforms import ColorMatching
-from color_transfer import cli
+from cm_kan import cli
 
 THREADS = 8
 

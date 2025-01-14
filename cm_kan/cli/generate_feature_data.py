@@ -6,7 +6,7 @@ from rich.progress import Progress
 from typing import List
 import imageio
 import asyncio
-from color_transfer import cli
+from cm_kan import cli
 
 
 def add_parser(subparser: argparse) -> None:

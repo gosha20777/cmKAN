@@ -4,16 +4,10 @@ from typing import Union
 
 
 class PipelineType(str, Enum):
-    default = 'default'
-    isp = 'isp'
-    mw_isp = 'mw_isp'
-    sep_kan = 'sep_kan'
-    sms = 'sms'
-    sep_kan_2d = 'sep_kan_2d'
+    supervised   = 'supervised'
+    unsupervised = 'unsupervised'
+    pair_based   = 'pair_based'
     
-
-class SMSPipelineParams(BaseModel):
-    pass
 
 class PipelineParams(BaseModel):
     lr: float = 1e-3
@@ -31,7 +25,7 @@ class DefaultPipelineParams(PipelineParams):
 
 
 class Pipeline(BaseModel):
-    type: PipelineType = PipelineType.default
+    type: PipelineType = PipelineType.supervised
     params: Union[
         DefaultPipelineParams,
     ] = DefaultPipelineParams()

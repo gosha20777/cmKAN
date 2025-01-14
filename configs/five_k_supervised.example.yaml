@@ -1,0 +1,41 @@
+experiment: five_k_supervised
+save_dir: experiments
+resume: True
+accelerator: 'gpu'
+
+model:
+  type: cm_kan
+  params:
+    in_dims:
+      - 3
+    out_dims:
+      - 3
+    grid_size: 5
+    spline_order: 3
+    residual_std: 0.1
+    grid_range:
+      - 0.0
+      - 1.0
+
+data:
+  type: five_k
+  train:
+    source: 'data/five_k/train/source'
+    target: 'data/five_k/train/target'
+  val:
+    source: 'data/five_k/val/source'
+    target: 'data/five_k/val/target'
+  test:
+    source: 'data/five_k/test/source'
+    target: 'data/five_k/test/target'
+
+pipeline:
+  type: supervised
+  params:
+    lr: 1e-3
+    batch_size: 16
+    val_batch_size: 8
+    test_batch_size: 8
+    epochs: 700
+    save_freq: 10
+    visualize_freq: 10

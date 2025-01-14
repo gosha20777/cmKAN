@@ -11,10 +11,9 @@ from torchvision.transforms.v2 import (
 from torch.utils.data import DataLoader
 from typing import Tuple
 from .img_dataset import Image2ImageDataset
-from color_transfer.core import Logger
-from color_transfer.ml.transforms.pair_trransform import PairTransform
+from cm_kan.core import Logger
+from cm_kan.ml.transforms.pair_trransform import PairTransform
 
-CROP = 1024
 
 class HuaweiImgDataModule(L.LightningDataModule):
     def __init__(
@@ -87,9 +86,6 @@ class HuaweiImgDataModule(L.LightningDataModule):
         self.image_p_transform = PairTransform(
             crop_size=512, p=0.5, seed=seed
         )
-        self.val_image_p_transform = PairTransform(
-            crop_size=1024, p=0.0, seed=seed
-        )
 
         self.image_train_transform = Compose([
             ToImage(),
@@ -114,7 +110,7 @@ class HuaweiImgDataModule(L.LightningDataModule):
                 self.train_paths_a, self.train_paths_b, self.image_train_transform, self.image_p_transform,
             )
             self.val_dataset = Image2ImageDataset(
-                self.val_paths_a, self.val_paths_b, self.image_val_transform, self.val_image_p_transform,
+                self.val_paths_a, self.val_paths_b, self.image_val_transform,
             )
         if stage == 'test' or stage is None:
             self.test_dataset = Image2ImageDataset(

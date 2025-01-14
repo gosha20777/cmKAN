@@ -1,1 +1,0 @@
-from sep_kan.sep_kan import SepKAN
