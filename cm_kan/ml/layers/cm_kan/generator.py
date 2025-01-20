@@ -272,3 +272,98 @@ class GeneratorLayer(torch.nn.Module):
         x = self.conv_reproj(x)
 
         return x
+
+
+class LightEncoder2D(torch.nn.Module):
+    """ Input features BxCxN """
+
+    def __init__(self, in_dim, out_dim, kernel_size):
+        super(LightEncoder2D, self).__init__()
+        self.estimator = IlluminationEstimator(12, in_dim+1, in_dim)
+        
+        self.down1 = DWTForward() # 12 h/2
+        self.trans1 = TransformerBlock(
+            12, 12, 12, 3, True
+        )
+        self.illu_down1 = nn.Sequential(
+            nn.AvgPool2d(2),
+            nn.Conv2d(12, 12, 1),
+        )
+
+        self.up1 = nn.Upsample(scale_factor=2, mode='bilinear')
+        
+        self.conv_out = nn.Sequential(
+            LayerNorm(3+12),
+            FFN(3+12, out_dim)
+        )
+        
+        
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        illu_fea, illu_map = self.estimator(x)
+        x = x * illu_map + x # 3 h w
+
+        x1 = self.down1(x)
+        illu_fea = self.illu_down1(illu_fea)
+        x1 = self.trans1(x1, illu_fea) # 12 h/2 w/2
+
+        x1 = self.up1(x1)
+        x = torch.cat([x, x1], dim=1)
+        x = self.conv_out(x)
+        return x
+
+
+class LightGeneratorLayer(torch.nn.Module):
+    """
+    sepconv replace conv_out to reduce GFLOPS
+    """
+
+    def __init__(self, in_channels, out_channels):
+        super().__init__()
+
+        MID_CHANNELS = 3+12
+        self.encoder = LightEncoder2D(in_channels, MID_CHANNELS, 3)
+
+        self.norm1 = LayerNorm(MID_CHANNELS)
+
+        N = 30
+        self.basis = nn.Parameter(torch.rand(1, MID_CHANNELS, N))
+
+        self.q = nn.Conv2d(MID_CHANNELS, MID_CHANNELS, kernel_size=1)
+        self.k = nn.Conv1d(MID_CHANNELS, MID_CHANNELS, kernel_size=1)
+        self.v = nn.Conv1d(MID_CHANNELS, MID_CHANNELS, kernel_size=1)
+
+        self.norm2 = LayerNorm(MID_CHANNELS)
+
+        self.conv_reproj = FFN(in_features=MID_CHANNELS, out_features=out_channels)
+
+    def forward(self, x:torch.Tensor):
+
+        B, C, H, W = x.shape
+
+        # forward projection
+        x = self.encoder(x)
+
+        x = self.norm1(x)
+
+        # basis coeff
+        q = self.q(x)
+        k = self.k(self.basis)
+        v = self.v(self.basis)
+
+        q = rearrange(q, 'b c h w -> b c (h w)')
+
+        q = F.normalize(q, dim=-1)
+        k = F.normalize(k, dim=-1)
+
+        a = (q.transpose(-2, -1) @ k).transpose(-2, -1)
+        a = F.relu(a)
+
+        y = v @ a
+
+        y = rearrange(y, 'b c (h w) -> b c h w', h=H, w=W)
+
+        # back projection
+        x = self.norm2(y)
+        x = self.conv_reproj(x)
+
+        return x

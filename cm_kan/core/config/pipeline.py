@@ -23,9 +23,13 @@ class DefaultPipelineParams(PipelineParams):
     optimizer: str = 'adam'
     weight_decay: float = 0.0
 
+class PairBasedPipelineParams(DefaultPipelineParams):
+    finetune_iters: int = 10
+
 
 class Pipeline(BaseModel):
     type: PipelineType = PipelineType.supervised
     params: Union[
+        PairBasedPipelineParams,
         DefaultPipelineParams,
-    ] = DefaultPipelineParams()
+    ]

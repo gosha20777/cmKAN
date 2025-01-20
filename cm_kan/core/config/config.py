@@ -17,7 +17,7 @@ class Config(BaseModel):
     resume: bool = False
     model: Model
     data: Data
-    pipeline: Pipeline = Pipeline()
+    pipeline: Pipeline
     accelerator: Union[str,int] = 'gpu'
 
     def print(self) -> None:

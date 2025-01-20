@@ -1,22 +1,33 @@
 import torch
 from torch import nn
 import lightning as L
+from lightning.pytorch.callbacks import (
+    ModelCheckpoint,
+    RichModelSummary,
+    RichProgressBar,
+    LearningRateMonitor,
+)
+from rich.progress import Progress
 from torch import optim
-from ..models import CmKAN
+from ..models import LightCmKAN
+from ..datasets import PairDataModule
 from cm_kan.core import Logger
 from ..metrics import (
     PSNR,
     SSIM,
     DeltaE,
 )
+import copy
 
 
 class PairBasedPipeline(L.LightningModule):
     def __init__(self,
-        model: CmKAN,
+        model: LightCmKAN,
         optimiser: str = 'adam',
         lr: float = 1e-3,
         weight_decay: float = 0,
+        finetune_iters: int = 10,
+        accerator: str = 'gpu',
     ) -> None:
         super(PairBasedPipeline, self).__init__()
 
@@ -29,10 +40,12 @@ class PairBasedPipeline(L.LightningModule):
         self.de_metric = DeltaE()
         self.ssim_metric = SSIM(data_range=(0, 1))
         self.psnr_metric = PSNR(data_range=(0, 1))
-        
-        self.save_hyperparameters(ignore=['model'])
 
-        raise NotImplementedError('PairBasedPipeline is not implemented yet.')
+        self.finetune_iters = finetune_iters
+        self.save_hyperparameters(ignore=['model', 'internal_trainer'])
+        self.progress = None
+        self.finetune_task = None
+
     
     def setup(self, stage: str) -> None:
         '''
@@ -55,7 +68,7 @@ class PairBasedPipeline(L.LightningModule):
                     nn.init.normal_(m.weight, 0, 0.01)
                     nn.init.constant_(m.bias, 0)
         
-        Logger.info('Initialized model weights with [bold green]Supervised[/bold green] pipeline.')
+        Logger.info('Initialized model weights with [bold green]Pair Based[/bold green] pipeline.')
 
     def configure_optimizers(self):
         if self.optimizer_type == 'adam':
@@ -72,6 +85,78 @@ class PairBasedPipeline(L.LightningModule):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         pred = self.model(x)
         return pred
+    
+    def on_validation_end(self):
+        if self.progress:
+            self.progress.update(
+                self.finetune_task, 
+                advance=0, 
+                completed=True,
+                description=f'Finetune', 
+                visible=False,
+            )
+        return super().on_validation_end()
+    
+    def _finetune_predict(self, inputs, targets) -> torch.Tensor:
+        assert len(inputs) == 1, f"Expected batch size = 1, got {len(inputs)}"
+
+        if self.progress is None:
+            for c in self._trainer.callbacks:
+                if isinstance(c, RichProgressBar):
+                    self.progress = c.progress
+                    self.finetune_task = self.progress.add_task(f"Finetune", total=self.finetune_iters)
+                    break
+
+        if self.progress:
+            self.progress.update(
+                self.finetune_task, 
+                advance=0, 
+                description=f'Finetune', 
+                visible=True,
+                refresh=True
+            )
+
+        dm = PairDataModule(inputs[0], targets[0], num_iters=self.finetune_iters)
+        dm.setup('fit')
+        dl = dm.train_dataloader()
+
+        finetune_model = copy.deepcopy(self.model)
+        optimizer = optim.Adam(finetune_model.parameters())
+        loss_fn = nn.L1Loss(reduction='mean')
+        finetune_model.train(True)
+                
+        with torch.set_grad_enabled(True):
+            for i, batch in enumerate(dl):
+                inputs, targets = batch
+                optimizer.zero_grad()
+                predictions = finetune_model(inputs)
+                loss = loss_fn(predictions, targets)
+                loss.backward()
+                optimizer.step()
+                if self.progress:
+                    self.progress.update(
+                        self.finetune_task, 
+                        advance=1, 
+                        description=f'Finetune', 
+                        visible=True
+                    )
+        
+        finetune_model.eval()
+        with torch.no_grad():
+            predictions = finetune_model(inputs)
+
+        del finetune_model
+
+        if self.progress:
+            self.progress.update(
+                self.finetune_task, 
+                advance=0, 
+                completed=True,
+                description=f'Finetune', 
+                visible=True,
+            )
+
+        return predictions
 
     def training_step(self, batch, batch_idx):
         inputs, targets = batch
@@ -85,7 +170,7 @@ class PairBasedPipeline(L.LightningModule):
     
     def validation_step(self, batch, batch_idx):
         inputs, targets = batch
-        predictions = self(inputs)
+        predictions = self._finetune_predict(inputs, targets)
         mae_loss = self.mae_loss(predictions, targets)
         psnr_metric = self.psnr_metric(predictions, targets)
         ssim_metric = self.ssim_metric(predictions, targets)
@@ -99,7 +184,7 @@ class PairBasedPipeline(L.LightningModule):
     
     def test_step(self, batch, batch_idx):
         inputs, targets = batch
-        predictions = self(inputs)
+        predictions = self._finetune_predict(inputs, targets)
         mae_loss = self.mae_loss(predictions, targets)
         panr_metric = self.psnr_metric(predictions, targets)
         ssim_metric = self.ssim_metric(predictions, targets)
@@ -112,6 +197,6 @@ class PairBasedPipeline(L.LightningModule):
         return {'loss': mae_loss}
     
     def predict_step(self, batch, batch_idx, dataloader_idx):
-        inputs, _ = batch
-        output = self(inputs)
-        return output
+        inputs, targets = batch
+        predictions = self._finetune_predict(inputs, targets)
+        return predictions

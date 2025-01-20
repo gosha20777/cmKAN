@@ -1,1 +1,1 @@
-from .cm_kan import CmKANLayer
+from .cm_kan import CmKANLayer, LightCmKANLayer

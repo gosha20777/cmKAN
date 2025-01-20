@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from .kan import KANLayer
-from .generator import GeneratorLayer
+from .generator import GeneratorLayer, LightGeneratorLayer
 
 
 class CmKANLayer(torch.nn.Module):
@@ -68,3 +68,12 @@ class CmKANLayer(torch.nn.Module):
         x = x.view(B, H, W, self.kan_layer.out_dim).permute(0, 3, 1, 2)
 
         return x
+    
+
+class LightCmKANLayer(CmKANLayer):
+    def __init__(self, in_channels, out_channels, grid_size, spline_order,
+                 residual_std, grid_range):
+        super(LightCmKANLayer, self).__init__(in_channels, out_channels, grid_size, spline_order,
+                 residual_std, grid_range)
+        self.generator = LightGeneratorLayer(in_channels, self.kan_params_num)
+
