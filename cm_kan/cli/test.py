@@ -32,6 +32,13 @@ def add_parser(subparser: argparse) -> None:
         default="config.yaml",
         required=False,
     )
+    parser.add_argument(
+        "-w", "--weights",
+        type=str,
+        help="Path to checkpoint file in the experiment folder",
+        default="logs/checkpoints/last.ckpt",
+        required=False,
+    )
 
     parser.set_defaults(func=test)
 
@@ -68,7 +75,7 @@ def test(args: argparse.Namespace) -> None:
         ],
     )
 
-    ckpt_path = os.path.join(config.save_dir, config.experiment, 'logs/checkpoints/last.ckpt')
+    ckpt_path = os.path.join(config.save_dir, config.experiment, args.weights)
 
     if not os.path.exists(ckpt_path):
         ckpt_path = None

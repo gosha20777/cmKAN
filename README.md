@@ -9,3 +9,43 @@ We present ***cmKAN***, a versatile framework for color matching. Given an input
 ## Dataset
 
 ## How To Use
+
+Our `cmKAN` provides a command-line interface (CLI) to interact with the following tools:
+
+```bash
+python main.py -h 
+
+Usage: cmKAN CLI [-h] {data-create,test,train,predict,unit-test} ...
+
+Options:
+  -h, --help            Show this help message and exit
+
+Tools:
+  {data-create,test,train,predict,unit-test}
+    
+    data-create         Create dataset
+    train               Train model
+    test                Test model
+    predict             Run model inference
+    unit-test           Run unit tests
+```
+
+For all the tools, you can use the `-h` flag to get help on how to use them (e.g. `python main.py train -h`). Here are some examples on how to use the tools:
+
+### Train
+
+```bash
+python main.py train -c configs/config.yaml
+```
+
+### Test
+
+```bash
+python main.py test -c configs/config.yaml -w checkpoint.ckpt
+```
+
+### Predict
+
+```bash
+python main.py predict -c configs/config.yaml -i path/to/input/folder -o path/to/output/folder
+```
