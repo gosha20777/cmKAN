@@ -36,7 +36,6 @@ class PipelineSelector:
                     lr=config.pipeline.params.lr,
                     weight_decay=config.pipeline.params.weight_decay,
                     finetune_iters=config.pipeline.params.finetune_iters,
-                    accerator=config.accelerator
                 )
             case _:
                 raise ValueError(f'Unupported pipeline type f{config.pipeline.type}')

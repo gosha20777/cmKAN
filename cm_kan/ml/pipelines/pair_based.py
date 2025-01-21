@@ -2,10 +2,7 @@ import torch
 from torch import nn
 import lightning as L
 from lightning.pytorch.callbacks import (
-    ModelCheckpoint,
-    RichModelSummary,
     RichProgressBar,
-    LearningRateMonitor,
 )
 from rich.progress import Progress
 from torch import optim
@@ -27,7 +24,6 @@ class PairBasedPipeline(L.LightningModule):
         lr: float = 1e-3,
         weight_decay: float = 0,
         finetune_iters: int = 10,
-        accerator: str = 'gpu',
     ) -> None:
         super(PairBasedPipeline, self).__init__()
 
