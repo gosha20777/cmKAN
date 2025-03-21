@@ -173,3 +173,5 @@ experiments/
 !five_k_supervised.example.yaml
 !iphone2samsung_unsupervised.example.yaml
 !aim_supervised.example.yaml
+
+debug.ipynb

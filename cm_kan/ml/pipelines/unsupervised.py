@@ -1,8 +1,11 @@
 import torch
+import itertools
 from torch import nn
+from torch.nn import functional as F
 import lightning as L
 from torch import optim
-from ..models import CmKAN
+from ..models import CycleCmKAN
+from ..utils.image_pool import ImagePool
 from cm_kan.core import Logger
 from ..metrics import (
     PSNR,
@@ -13,14 +16,18 @@ from ..metrics import (
 
 class UnsupervisedPipeline(L.LightningModule):
     def __init__(self,
-        model: CmKAN,
+        model: CycleCmKAN,
         optimiser: str = 'adam',
         lr: float = 1e-3,
         weight_decay: float = 0,
+        pretrained: bool = False,
     ) -> None:
         super(UnsupervisedPipeline, self).__init__()
 
         self.model = model
+        self.fake_pool_a = ImagePool()
+        self.fake_pool_b = ImagePool()
+        self.lm = 10.0
         self.optimizer_type = optimiser
         self.lr = lr
         self.weight_decay = weight_decay
@@ -29,11 +36,47 @@ class UnsupervisedPipeline(L.LightningModule):
         self.de_metric = DeltaE()
         self.ssim_metric = SSIM(data_range=(0, 1))
         self.psnr_metric = PSNR(data_range=(0, 1))
+        self.pretrained = pretrained
         
         self.save_hyperparameters(ignore=['model'])
 
-        raise NotImplementedError('UnsupervisedPipeline is not implemented yet.')
+    def _identity_loss(self, predictions, targets):
+        mae_loss = self.mae_loss(predictions, targets)
+        return mae_loss
+
+    def _cycle_loss(self, predictions, targets):
+        mae_loss = self.mae_loss(predictions, targets)
+        ssim_loss = self.ssim_loss(predictions, targets)
+        loss = mae_loss + (1 - ssim_loss) * 0.15
+        return loss
+
+    def _disc_loss(self, predictions, label):
+        """
+            According to the CycleGan paper, label for
+            real is one and fake is zero.
+        """
+        if label.lower() == 'real':
+            target = torch.ones_like(predictions)
+        else:
+            target = torch.zeros_like(predictions)
+        
+        return F.mse_loss(predictions, target)
     
+    @staticmethod
+    def _set_requires_grad(nets, requires_grad = False):
+
+        """
+        Set requies_grad=False for all the networks to avoid unnecessary computations
+        Parameters:
+            nets (network list)   -- a list of networks
+            requires_grad (bool)  -- whether the networks require gradients or not
+        """
+
+        if not isinstance(nets, list): nets = [nets]
+        for net in nets:
+            for param in net.parameters():
+                param.requires_grad = requires_grad
+
     def setup(self, stage: str) -> None:
         '''
         Initialize model weights before training
@@ -55,33 +98,124 @@ class UnsupervisedPipeline(L.LightningModule):
                     nn.init.normal_(m.weight, 0, 0.01)
                     nn.init.constant_(m.bias, 0)
         
-        Logger.info('Initialized model weights with [bold green]Supervised[/bold green] pipeline.')
+        Logger.info('Initialized model weights with [bold green]Unsupervised[/bold green] pipeline.')
 
     def configure_optimizers(self):
-        if self.optimizer_type == 'adam':
-            optimizer = optim.Adam(self.parameters(), lr=self.lr, weight_decay=self.weight_decay)
-        elif self.optimizer_type == 'sgd':
-            optimizer = optim.SGD(self.parameters(), lr=self.lr, weight_decay=self.weight_decay)
+        if not self.pretrained:
+            if self.optimizer_type == 'adam':
+                optimizer = optim.Adam(itertools.chain(self.model.gen_ab.parameters(), self.model.gen_ba.parameters()),
+                            lr=self.lr, weight_decay=self.weight_decay)
+            else:
+                raise ValueError(f'unsupported optimizer_type: {self.optimizer_type}')
+            scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(
+                optimizer, T_0=500, T_mult=1, eta_min=1e-5
+            )
+            return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": "val_loss"}
         else:
-            raise ValueError(f'unsupported optimizer_type: {self.optimizer_type}')
-        scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(
-            optimizer, T_0=500, T_mult=1, eta_min=1e-5
-        )
-        return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": "val_loss"}
+            if self.optimizer_type == 'adam':
+                optG = optim.Adam(
+                    itertools.chain(self.model.gen_ab.parameters(), self.model.gen_ba.parameters()),
+                    lr=2e-4, betas=(0.5, 0.999)
+                )
+
+                optD = optim.Adam(
+                    itertools.chain(self.model.dis_a.parameters(), self.model.dis_b.parameters()),
+                    lr=2e-4, betas=(0.5, 0.999)
+                )
+            else:
+                raise ValueError(f'unsupported optimizer_type: {self.optimizer_type}')
+            gamma = lambda epoch: 1 - max(0, epoch + 1 - 100) / 101
+            schG = optim.lr_scheduler.LambdaLR(optG, lr_lambda=gamma)
+            schD = optim.lr_scheduler.LambdaLR(optD, lr_lambda=gamma)
+            return [optG, optD], [schG, schD]
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        pred = self.model(x)
+        pred = self.model.gen_ab(x)
         return pred
+    
+    def generator_training_step(self, imgA, imgB):        
+        """cycle images - using only generator nets"""
+        fakeB = self.model.gen_ab(imgA)
+        cycledA = self.model.gen_ba(fakeB)
+        
+        fakeA = self.model.gen_ba(imgB)
+        cycledB = self.model.gen_ab(fakeA)
+        
+        sameB = self.model.gen_ab(imgB)
+        sameA = self.model.gen_ba(imgA)
+        
+        # generator gen_ab must fool discrim dis_b so label is real = 1
+        predFakeB = self.model.dis_b(fakeB)
+        mseGenB = self._disc_loss(predFakeB, 'real')
+        
+        # generator gen_ba must fool discrim dis_a so label is real
+        predFakeA = self.model.dis_a(fakeA)
+        mseGenA = self._disc_loss(predFakeA, 'real')
+        
+        # compute extra losses
+        identityLoss = self._identity_loss(sameA, imgA) + self._identity_loss(sameB, imgB)
+        
+        # compute cycleLosses
+        cycleLoss = self._cycle_loss(cycledA, imgA) + self._cycle_loss(cycledB, imgB)
+        
+        # gather all losses
+        extraLoss = cycleLoss + 0.5 * identityLoss
+        gen_loss = mseGenA + mseGenB + self.lm * extraLoss
+        self.log('gen_loss', gen_loss.item(), prog_bar=True, logger=True)
+        
+        # store detached generated images
+        self.fakeA = fakeA.detach()
+        self.fakeB = fakeB.detach()
+        
+        return gen_loss
+    
+    def discriminator_training_step(self, imgA, imgB):
+        """Update Discriminator"""        
+        fakeA = self.fake_pool_a.query(self.fakeA)
+        fakeB = self.fake_pool_b.query(self.fakeB)
+        
+        # dis_a checks for domain A photos
+        predRealA = self.model.dis_a(imgA)
+        mseRealA = self._disc_loss(predRealA, 'real')
+        
+        predFakeA = self.model.dis_a(fakeA)
+        mseFakeA = self._disc_loss(predFakeA, 'fake')
+        
+        # dis_b checks for domain B photos
+        predRealB = self.model.dis_b(imgB)
+        mseRealB = self._disc_loss(predRealB, 'real')
+        
+        predFakeB = self.model.dis_b(fakeB)
+        mseFakeB = self._disc_loss(predFakeB, 'fake')
+        
+        # gather all losses
+        dis_loss = 0.5 * (mseFakeA + mseRealA + mseFakeB + mseRealB)
+        self.log('dis_loss', dis_loss.item(), prog_bar=True, logger=True)
+        return dis_loss
+    
+    def generator_pretained_step(self, imgA, imgB):
+        reco_b = self.model.gen_ab(imgA)
+        reco_a = self.model.gen_ba(imgB)
+        loss = self._cycle_loss(reco_b, imgB) + self._cycle_loss(reco_a, imgA)
+        self.log('pretrain_loss', loss.item(), prog_bar=True, logger=True)
+        return loss
 
-    def training_step(self, batch, batch_idx):
-        inputs, targets = batch
-        predictions = self(inputs)
-        mae_loss = self.mae_loss(predictions, targets)
-        ssim_loss = self.ssim_loss(predictions, targets)
-        loss = mae_loss + (1 - ssim_loss) * 0.15
 
-        self.log('train_loss', loss, prog_bar=True, logger=True)
-        return {'loss': loss}
+    def training_step(self, batch, batch_idx, optimizer_idx):
+        img_a, img_b = batch
+
+        if self.pretrained:
+            loss = self.generator_pretained_step(img_a, img_b)
+            return {'loss': loss}
+        else:
+            if optimizer_idx == 0:
+                self._set_requires_grad([self.model.dis_a, self.model.dis_b], requires_grad=False)
+                loss = self.generator_training_step(img_a, img_b)
+                return {'loss': loss}
+            if optimizer_idx == 1:
+                self._set_requires_grad([self.model.dis_a, self.model.dis_b], requires_grad=True)
+                loss = self.discriminator_training_step(img_a, img_b)
+                return {'loss': loss}
     
     def validation_step(self, batch, batch_idx):
         inputs, targets = batch

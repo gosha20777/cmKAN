@@ -27,7 +27,8 @@ class PipelineSelector:
                     model=model,
                     optimiser=config.pipeline.params.optimizer,
                     lr=config.pipeline.params.lr,
-                    weight_decay=config.pipeline.params.weight_decay
+                    weight_decay=config.pipeline.params.weight_decay,
+                    pretrained=config.pipeline.params.pretrained,
                 )
             case PipelineType.pair_based:
                 return PairBasedPipeline(
