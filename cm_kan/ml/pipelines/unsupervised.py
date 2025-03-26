@@ -21,6 +21,7 @@ class UnsupervisedPipeline(L.LightningModule):
         lr: float = 1e-3,
         weight_decay: float = 0,
         pretrained: bool = False,
+        pretrained_model: str = None
     ) -> None:
         super(UnsupervisedPipeline, self).__init__()
 
@@ -37,6 +38,9 @@ class UnsupervisedPipeline(L.LightningModule):
         self.ssim_metric = SSIM(data_range=(0, 1))
         self.psnr_metric = PSNR(data_range=(0, 1))
         self.pretrained = pretrained
+        if pretrained:
+            self.automatic_optimization = False
+            self.pretrained_model = pretrained_model
         
         self.save_hyperparameters(ignore=['model'])
 
@@ -97,8 +101,26 @@ class UnsupervisedPipeline(L.LightningModule):
                 elif isinstance(m, nn.Linear):
                     nn.init.normal_(m.weight, 0, 0.01)
                     nn.init.constant_(m.bias, 0)
+
+            if self.pretrained:
+                pipeline = UnsupervisedPipeline.load_from_checkpoint(
+                    self.pretrained_model,
+                    model=self.model,
+                    optimiser=self.optimizer_type,
+                    lr=self.lr,
+                    weight_decay=self.weight_decay,
+                    pretrained=False
+                )
+                self.model.gen_ab = pipeline.model.gen_ab
+                self.model.gen_ba = pipeline.model.gen_ba
+                del pipeline
+                Logger.info(f'Initialized model weights {self.pretrained_model}.')
         
         Logger.info('Initialized model weights with [bold green]Unsupervised[/bold green] pipeline.')
+        if self.pretrained:
+            Logger.info('Model is in [bold green]CycleGAN training[/bold green] mode.')
+        else:
+            Logger.info('Model is in [bold green]Generator pre-training[/bold green] mode.')
 
     def configure_optimizers(self):
         if not self.pretrained:
@@ -193,7 +215,7 @@ class UnsupervisedPipeline(L.LightningModule):
         self.log('dis_loss', dis_loss.item(), prog_bar=True, logger=True)
         return dis_loss
     
-    def generator_pretained_step(self, imgA, imgB):
+    def generator_pretaining_step(self, imgA, imgB):
         reco_b = self.model.gen_ab(imgA)
         reco_a = self.model.gen_ba(imgB)
         loss = self._cycle_loss(reco_b, imgB) + self._cycle_loss(reco_a, imgA)
@@ -201,21 +223,38 @@ class UnsupervisedPipeline(L.LightningModule):
         return loss
 
 
-    def training_step(self, batch, batch_idx, optimizer_idx):
+    def training_step(self, batch, batch_idx):
         img_a, img_b = batch
 
-        if self.pretrained:
-            loss = self.generator_pretained_step(img_a, img_b)
+        if not self.pretrained:
+            loss = self.generator_pretaining_step(img_a, img_b)
             return {'loss': loss}
         else:
-            if optimizer_idx == 0:
-                self._set_requires_grad([self.model.dis_a, self.model.dis_b], requires_grad=False)
-                loss = self.generator_training_step(img_a, img_b)
-                return {'loss': loss}
-            if optimizer_idx == 1:
-                self._set_requires_grad([self.model.dis_a, self.model.dis_b], requires_grad=True)
-                loss = self.discriminator_training_step(img_a, img_b)
-                return {'loss': loss}
+            opt_gen, opt_disc = self.optimizers()
+            sch_gen, sch_disc = self.lr_schedulers()
+            
+            # train generator
+            self.toggle_optimizer(opt_gen)
+            self._set_requires_grad([self.model.dis_a, self.model.dis_b], requires_grad=False)
+            gen_loss = self.generator_training_step(img_a, img_b)
+            opt_gen.zero_grad()
+            self.manual_backward(gen_loss)
+            opt_gen.step()
+            self.untoggle_optimizer(opt_gen)
+            
+            # train discriminator
+            self.toggle_optimizer(opt_disc)
+            self._set_requires_grad([self.model.dis_a, self.model.dis_b], requires_grad=True)
+            disc_loss = self.discriminator_training_step(img_a, img_b)
+            opt_disc.zero_grad()
+            self.manual_backward(disc_loss)
+            opt_disc.step()
+            self.untoggle_optimizer(opt_disc)
+
+            if self.trainer.is_last_batch:
+                sch_gen.step()
+                sch_disc.step()
+            return
     
     def validation_step(self, batch, batch_idx):
         inputs, targets = batch

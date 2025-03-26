@@ -23,14 +23,15 @@ class DefaultPipelineParams(PipelineParams):
     optimizer: str = 'adam'
     weight_decay: float = 0.0
 
+
 class PairBasedPipelineParams(DefaultPipelineParams):
     finetune_iters: int = 10
 
+
 class UnsupervisedPipelineParams(DefaultPipelineParams):
     pretrained: bool = False
+    pretrained_model: str = ''
 
-class Params(UnsupervisedPipelineParams, DefaultPipelineParams, PairBasedPipelineParams):
-    pass
 
 class Pipeline(BaseModel):
     type: PipelineType = PipelineType.supervised
@@ -38,4 +39,4 @@ class Pipeline(BaseModel):
         UnsupervisedPipelineParams,
         DefaultPipelineParams,
         PairBasedPipelineParams,
-    ] = Params()
+    ]
