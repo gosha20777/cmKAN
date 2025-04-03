@@ -94,6 +94,7 @@ class PairBasedPipeline(L.LightningModule):
         return super().on_validation_end()
     
     def _finetune_predict(self, inputs, targets) -> torch.Tensor:
+        torch.set_grad_enabled(True)
         assert len(inputs) == 1, f"Expected batch size = 1, got {len(inputs)}"
 
         if self.progress is None:
@@ -120,22 +121,21 @@ class PairBasedPipeline(L.LightningModule):
         optimizer = optim.Adam(finetune_model.parameters())
         loss_fn = nn.L1Loss(reduction='mean')
         finetune_model.train(True)
-                
-        with torch.set_grad_enabled(True):
-            for i, batch in enumerate(dl):
-                inputs, targets = batch
-                optimizer.zero_grad()
-                predictions = finetune_model(inputs)
-                loss = loss_fn(predictions, targets)
-                loss.backward()
-                optimizer.step()
-                if self.progress:
-                    self.progress.update(
-                        self.finetune_task, 
-                        advance=1, 
-                        description=f'Finetune', 
-                        visible=True
-                    )
+        
+        for i, batch in enumerate(dl):
+            inputs, targets = batch
+            optimizer.zero_grad()
+            predictions = finetune_model(inputs)
+            loss = loss_fn(predictions, targets)
+            loss.backward()
+            optimizer.step()
+            if self.progress:
+                self.progress.update(
+                    self.finetune_task, 
+                    advance=1, 
+                    description=f'Finetune loss: {loss.item()}', 
+                    visible=True
+                )
         
         finetune_model.eval()
         with torch.no_grad():
@@ -166,7 +166,7 @@ class PairBasedPipeline(L.LightningModule):
     
     def validation_step(self, batch, batch_idx):
         inputs, targets = batch
-        predictions = self._finetune_predict(inputs, targets)
+        predictions = self(inputs)
         mae_loss = self.mae_loss(predictions, targets)
         psnr_metric = self.psnr_metric(predictions, targets)
         ssim_metric = self.ssim_metric(predictions, targets)

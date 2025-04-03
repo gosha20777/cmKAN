@@ -25,18 +25,18 @@ class DefaultPipelineParams(PipelineParams):
 
 
 class PairBasedPipelineParams(DefaultPipelineParams):
-    finetune_iters: int = 10
+    finetune_iters: int
 
 
 class UnsupervisedPipelineParams(DefaultPipelineParams):
-    pretrained: bool = False
-    pretrained_model: str = ''
+    pretrained: bool
+    pretrained_model: str
 
 
 class Pipeline(BaseModel):
     type: PipelineType = PipelineType.supervised
     params: Union[
         UnsupervisedPipelineParams,
-        DefaultPipelineParams,
         PairBasedPipelineParams,
+        DefaultPipelineParams,
     ]

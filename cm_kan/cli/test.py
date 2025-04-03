@@ -1,11 +1,13 @@
 import argparse
 import yaml
+from ..core import Logger
 from ..core.selector import (
     ModelSelector,
     DataSelector,
     PipelineSelector
 )
 from ..core.config import Config
+from ..core.config.pipeline import PipelineType
 import lightning as L
 import os
 from lightning.pytorch.callbacks import (
@@ -44,12 +46,15 @@ def add_parser(subparser: argparse) -> None:
 
 
 def test(args: argparse.Namespace) -> None:
-    print(f"Loading config from {args.config}")
+    Logger.info(f"Loading config from '{args.config}'")
     with open(args.config, 'r', encoding='utf-8') as f:
         config = yaml.safe_load(f)
 
     config = Config(**config)
-    print('Config:')
+    inference_mode = config.pipeline.type != PipelineType.pair_based
+    if not inference_mode:
+        Logger.info(f'Inference mode: {inference_mode}. Use optimization while testing.')
+    Logger.info('Config:')
     config.print()
     
     dm = DataSelector.select(config)
@@ -73,6 +78,7 @@ def test(args: argparse.Namespace) -> None:
                 every_n_epochs=1,
             ),
         ],
+        inference_mode=inference_mode,
     )
 
     ckpt_path = os.path.join(config.save_dir, config.experiment, args.weights)

@@ -1,5 +1,6 @@
 import argparse
 import yaml
+from ..core import Logger
 from ..core.selector import (
     ModelSelector,
     DataSelector,
@@ -37,12 +38,12 @@ def add_parser(subparser: argparse) -> None:
 
 
 def train(args: argparse.Namespace) -> None:
-    print(f"Loading config from {args.config}")
+    Logger.info(f"Loading config from '{args.config}'")
     with open(args.config, 'r', encoding='utf-8') as f:
         config = yaml.safe_load(f)
 
     config = Config(**config)
-    print('Config:')
+    Logger.info('Config:')
     config.print()
     
     dm = DataSelector.select(config)
