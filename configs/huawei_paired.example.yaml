@@ -1,0 +1,42 @@
+experiment: huawei_paired
+save_dir: experiments
+resume: True
+accelerator: 'gpu'
+
+model:
+  type: light_cm_kan
+  params:
+    in_dims:
+      - 3
+    out_dims:
+      - 3
+    grid_size: 5
+    spline_order: 3
+    residual_std: 0.1
+    grid_range:
+      - 0.0
+      - 1.0
+
+data:
+  type: huawei
+  train:
+    source: 'data/huawei/train/source'
+    target: 'data/huawei/train/target'
+  val:
+    source: 'data/huawei/val/source'
+    target: 'data/huawei/val/target'
+  test:
+    source: 'data/huawei/test/source'
+    target: 'data/huawei/test/target'
+
+pipeline:
+  type: pair_based
+  params:
+    lr: 1e-3
+    batch_size: 20
+    val_batch_size: 8
+    test_batch_size: 1
+    epochs: 300
+    save_freq: 10
+    visualize_freq: 10
+    finetune_iters: 5

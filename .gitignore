@@ -169,7 +169,7 @@ experiments/
 # experiment configs
 !huawei_supervised.example.yaml
 !huawei_unsupervised.example.yaml
-!huawei_pair.example.yaml
+!huawei_paired.example.yaml
 !five_k_supervised.example.yaml
 !iphone2samsung_unsupervised.example.yaml
 !aim_supervised.example.yaml
