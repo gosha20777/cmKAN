@@ -1,1 +1,2 @@
 from .generate import GenerateCallback
+from .write_predictions import ImagePredictionWriter

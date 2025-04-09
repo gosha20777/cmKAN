@@ -109,7 +109,7 @@ class SupervisedPipeline(L.LightningModule):
         self.log('test_loss', mae_loss, prog_bar=True, logger=True)
         return {'loss': mae_loss}
     
-    def predict_step(self, batch, batch_idx, dataloader_idx):
-        inputs, _ = batch
+    def predict_step(self, batch, batch_idx):
+        pathes, inputs = batch
         output = self(inputs)
         return output

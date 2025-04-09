@@ -192,7 +192,7 @@ class PairBasedPipeline(L.LightningModule):
         self.log('test_loss', mae_loss, prog_bar=True, logger=True)
         return {'loss': mae_loss}
     
-    def predict_step(self, batch, batch_idx, dataloader_idx):
-        inputs, targets = batch
+    def predict_step(self, batch, batch_idx):
+        pathes, inputs, targets = batch
         predictions = self._finetune_predict(inputs, targets)
         return predictions
