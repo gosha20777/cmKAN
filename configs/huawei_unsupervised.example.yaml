@@ -18,7 +18,7 @@ model:
       - 1.0
 
 data:
-  type: huawei
+  type: huawei_unpaired
   train:
     source: 'data/huawei/train/source'
     target: 'data/huawei/train/target'
