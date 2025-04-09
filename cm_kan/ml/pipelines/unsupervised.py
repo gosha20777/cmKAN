@@ -155,6 +155,10 @@ class UnsupervisedPipeline(L.LightningModule):
         pred = self.model.gen_ab(x)
         return pred
     
+    def reversed_forward(self, x: torch.Tensor) -> torch.Tensor:
+        pred = self.model.gen_ba(x)
+        return pred
+    
     def generator_training_step(self, imgA, imgB):        
         """cycle images - using only generator nets"""
         fakeB = self.model.gen_ab(imgA)
@@ -215,19 +219,19 @@ class UnsupervisedPipeline(L.LightningModule):
         self.log('dis_loss', dis_loss.item(), prog_bar=True, logger=True)
         return dis_loss
     
-    def generator_pretaining_step(self, imgA, imgB):
-        reco_b = self.model.gen_ab(imgA)
-        reco_a = self.model.gen_ba(imgB)
+    def generator_pretaining_step(self, imgAB_recolor, imgA, imgBA_recolor, imgB):
+        reco_b = self.model.gen_ab(imgBA_recolor)
+        reco_a = self.model.gen_ba(imgAB_recolor)
         loss = self._cycle_loss(reco_b, imgB) + self._cycle_loss(reco_a, imgA)
         self.log('pretrain_loss', loss.item(), prog_bar=True, logger=True)
         return loss
 
 
     def training_step(self, batch, batch_idx):
-        img_a, img_b = batch
+        img_ab_recolorized, img_a, img_ba_recolorized, img_b = batch
 
         if not self.pretrained:
-            loss = self.generator_pretaining_step(img_a, img_b)
+            loss = self.generator_pretaining_step(img_ab_recolorized, img_a, img_ba_recolorized, img_b)
             return {'loss': loss}
         else:
             opt_gen, opt_disc = self.optimizers()
