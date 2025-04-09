@@ -4,6 +4,7 @@ from enum import Enum
 
 class DataType(str, Enum):
     huawei = 'huawei'
+    huawei_unpaired = 'huawei_unpaired'
     five_k = 'five_k'  
 
 
