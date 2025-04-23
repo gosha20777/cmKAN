@@ -18,16 +18,16 @@ model:
       - 1.0
 
 data:
-  type: huawei
+  type: volga2k
   train:
-    source: 'data/huawei/train/source'
-    target: 'data/huawei/train/target'
+    source: 'data/volga2k/train/source'
+    target: 'data/volga2k/train/target'
   val:
-    source: 'data/huawei/val/source'
-    target: 'data/huawei/val/target'
+    source: 'data/volga2k/val/source'
+    target: 'data/volga2k/val/target'
   test:
-    source: 'data/huawei/test/source'
-    target: 'data/huawei/test/target'
+    source: 'data/volga2k/test/source'
+    target: 'data/volga2k/test/target'
 
 pipeline:
   type: pair_based

@@ -12,7 +12,7 @@ import yaml
 
 
 class Config(BaseModel):
-    experiment: str = 'huawei_supervised'
+    experiment: str = 'volga2k_supervised'
     save_dir: str = 'experiments'
     resume: bool = False
     model: Model

@@ -4,19 +4,16 @@ import os
 from pathlib import Path
 import random
 import numpy as np
-from rich.progress import Progress
+from rich.progress import Progress, TaskID
 from typing import List
 import imageio
 import asyncio
-from .utils import concurrent
 from cm_kan import cli
-
-THREADS = 8
 
 
 def add_parser(subparser: argparse) -> None:
     parser = subparser.add_parser(
-        "create-image-data",
+        "create-dataset",
         help="Create dataset",
         formatter_class=cli.ArgumentDefaultsRichHelpFormatter,
     )
@@ -24,28 +21,38 @@ def add_parser(subparser: argparse) -> None:
         "-s",
         "--source",
         type=str,
-        help="Path to input source directory",
-        required=True,
+        help="Path to input directory with source images",
+        default=os.path.join('data', 'volga2k', 'source'),
+        required=False,
     )
     parser.add_argument(
         "-t",
         "--target",
         type=str,
-        help="Path to input target directory",
-        required=True,
+        help="Path to input directory with target (reference) images",
+        default=os.path.join('data', 'volga2k', 'reference'),
+        required=False,
     )
     parser.add_argument(
         "-f",
         "--feature",
         type=str,
-        help="Path to feature directory",
-        required=True,
+        help="Path to input directory with color features",
+        default=os.path.join('data', 'volga2k', 'feature'),
+        required=False,
+    )
+    parser.add_argument(
+        "--use_feature",
+        action="store_true",
+        help="Generate dataset with *.npy color features (e.g. for classic pair based approaches)",
+        default=False,
+        required=False,
     )
     parser.add_argument(
         "-o",
         "--output",
         type=str,
-        default=os.path.join('data', 'huawei'),
+        default=os.path.join('data', 'volga2k'),
         help="Path to output directory",
         required=False,
     )
@@ -63,6 +70,14 @@ def add_parser(subparser: argparse) -> None:
         type=int,
         default=1024,
         help="Crop size, set 0 to skip cropping",
+        required=False,
+    )
+    parser.add_argument(
+        "-j",
+        "--threads",
+        type=int,
+        default=min(os.cpu_count(), 8),
+        help="Number of threads",
         required=False,
     )
     parser.set_defaults(func=generate_dataset)
@@ -89,7 +104,7 @@ def _crop_image(image: np.ndarray, crop_size: int) -> List[np.ndarray]:
     return crop_list
 
 
-@concurrent
+@parallel
 def _prepare_data(
     input_src_img_dir: Path,
     input_ref_img_dir: Path,
@@ -97,6 +112,8 @@ def _prepare_data(
     save_train_src_dir: Path,
     save_train_ref_dir: Path,
     name: str,
+    progress: Progress,
+    pb: TaskID,
     args,
 ):
 
@@ -112,34 +129,39 @@ def _prepare_data(
         feature_path = input_feature_dir.joinpath(Path(name).stem + '.npy')
         if not feature_path.is_file():
             raise Exception('No feature file')
+    try:    
+        image = imageio.v3.imread(source_path)
+        crop_list = _crop_image(image, args.crop_size)
+        for (i, image) in enumerate(crop_list):
+            save_name = name.replace('_src_m', f'_{i}')
+            imageio.v3.imwrite(save_train_src_dir.joinpath(save_name), image)
 
-    image = imageio.v3.imread(source_path)
-    crop_list = _crop_image(image, args.crop_size)
-    for (i, image) in enumerate(crop_list):
-        save_name = name.replace('_src_m', f'_{i}')
-        imageio.v3.imwrite(save_train_src_dir.joinpath(save_name), image)
+        image = imageio.v3.imread(target_path)
+        crop_list = _crop_image(image, args.crop_size)
+        for (i, image) in enumerate(crop_list):
+            save_name = name.replace('_src_m', f'_{i}')
+            imageio.v3.imwrite(save_train_ref_dir.joinpath(save_name), image)
 
-    image = imageio.v3.imread(target_path)
-    crop_list = _crop_image(image, args.crop_size)
-    for (i, image) in enumerate(crop_list):
-        save_name = name.replace('_src_m', f'_{i}')
-        imageio.v3.imwrite(save_train_ref_dir.joinpath(save_name), image)
+        if input_feature_dir is not None:
+            feature = np.load(feature_path)
+            src = feature[:, 0:3]
+            ref = feature[:, 3:6]
+            for i, _ in enumerate(crop_list):
+                save_name = Path(name.replace('_src_m', f'_{i}')).stem + '.npy'
+                np.save(os.path.join(save_train_src_dir, save_name), src)
+                np.save(os.path.join(save_train_ref_dir, save_name), ref)
+    except Exception as e:
+        print(f'Error: {e}')
+        raise Exception(f'Error during processing {name}!', e)
 
-    if input_feature_dir is not None:
-        feature = np.load(feature_path)
-        src = feature[:, 0:3]
-        ref = feature[:, 3:6]
-        for i, _ in enumerate(crop_list):
-            save_name = Path(name.replace('_src_m', f'_{i}')).stem + '.npy'
-            np.save(os.path.join(save_train_src_dir, save_name), src)
-            np.save(os.path.join(save_train_ref_dir, save_name), ref)
+    progress.update(pb, advance=1)
 
 
 def generate_dataset(args: argparse.Namespace) -> None:
     input_src_img_dir = Path(args.source)
     input_ref_img_dir = Path(args.target)
     input_feature_dir = Path(
-        args.feature) if args.feature is not None else None
+        args.feature) if args.use_feature else None
     output_dir = Path(args.output)
 
     if not input_src_img_dir.is_dir():
@@ -174,61 +196,56 @@ def generate_dataset(args: argparse.Namespace) -> None:
     test_files = files[split[1]:]
 
     with Progress() as progress:
-        train_pb = progress.add_task("[cyan]Train features",
+        train_pb = progress.add_task("[cyan]Train images",
                                      total=len(train_files))
         val_pb = progress.add_task("[cyan]Val images", total=len(val_files))
         test_pb = progress.add_task("[cyan]Test images", total=len(test_files))
 
-        with ThreadPoolExecutor(max_workers=THREADS) as executor:
-            train_tasks = [
+
+        loop = asyncio.get_event_loop()                                              # Have a new event loop
+        looper = asyncio.gather(*[
                 _prepare_data(
-                    executor,
                     input_src_img_dir,
                     input_ref_img_dir,
                     input_feature_dir,
                     save_train_src_dir,
                     save_train_ref_dir,
                     filename.name,
+                    progress,
+                    train_pb,
                     args,
                 ) for filename in train_files
-            ]
-            val_tasks = [
+            ])                       
+        _ = loop.run_until_complete(looper)
+
+        loop = asyncio.get_event_loop()                                              # Have a new event loop
+        looper = asyncio.gather(*[
                 _prepare_data(
-                    executor,
                     input_src_img_dir,
                     input_ref_img_dir,
                     input_feature_dir,
                     save_val_src_dir,
                     save_val_ref_dir,
                     filename.name,
+                    progress,
+                    val_pb,
                     args,
                 ) for filename in val_files
-            ]
-            test_tasks = [
+            ])                       
+        _ = loop.run_until_complete(looper)
+
+        loop = asyncio.get_event_loop()                                              # Have a new event loop
+        looper = asyncio.gather(*[
                 _prepare_data(
-                    executor,
                     input_src_img_dir,
                     input_ref_img_dir,
                     input_feature_dir,
                     save_test_src_dir,
                     save_test_ref_dir,
                     filename.name,
+                    progress,
+                    test_pb,
                     args,
                 ) for filename in test_files
-            ]
-
-            for task in train_tasks:
-                task.add_done_callback(
-                    lambda _: progress.update(train_pb, advance=1))
-            for task in val_tasks:
-                task.add_done_callback(
-                    lambda _: progress.update(val_pb, advance=1))
-            for task in test_tasks:
-                task.add_done_callback(
-                    lambda _: progress.update(test_pb, advance=1))
-
-            _, not_done = wait(train_tasks + val_tasks + test_tasks,
-                               return_when=ALL_COMPLETED)
-
-            if len(not_done) > 0:
-                print(f'[Warn] Skipped {len(not_done)} image pairs.')
+            ])                       
+        _ = loop.run_until_complete(looper)

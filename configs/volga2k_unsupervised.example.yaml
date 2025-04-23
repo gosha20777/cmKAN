@@ -1,4 +1,4 @@
-experiment: huawei_unsupervised
+experiment: volga2k_unsupervised
 save_dir: experiments
 resume: True
 accelerator: 'gpu'
@@ -18,16 +18,16 @@ model:
       - 1.0
 
 data:
-  type: huawei_unpaired
+  type: volga2k_unpaired
   train:
-    source: 'data/huawei/train/source'
-    target: 'data/huawei/train/target'
+    source: 'data/volga2k/train/source'
+    target: 'data/volga2k/train/target'
   val:
-    source: 'data/huawei/val/source'
-    target: 'data/huawei/val/target'
+    source: 'data/volga2k/val/source'
+    target: 'data/volga2k/val/target'
   test:
-    source: 'data/huawei/test/source'
-    target: 'data/huawei/test/target'
+    source: 'data/volga2k/test/source'
+    target: 'data/volga2k/test/target'
 
 pipeline:
   type: unsupervised
@@ -40,4 +40,4 @@ pipeline:
     save_freq: 10
     visualize_freq: 10
     pretrained: True
-    pretrained_model: 'experiments/huawei_unsupervised_pretrain/logs/checkpoints/last.ckpt'
+    pretrained_model: 'experiments/volga2k_unsupervised_pretrain/logs/checkpoints/last.ckpt'

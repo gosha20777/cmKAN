@@ -2,17 +2,17 @@ from ..config.data import DataType
 from ..config import Config
 from typing import Union
 from cm_kan.ml.datasets import (
-    HuaweiImgDataModule,
-    HuaweiImgUnpairedDataModule,
+    Valga2kImgDataModule,
+    Valga2kImgUnpairedDataModule,
     FiveKImgDataModule,
 )
 
 
 class DataSelector:
-    def select(config: Config) -> Union[HuaweiImgDataModule, FiveKImgDataModule]:
+    def select(config: Config) -> Union[Valga2kImgDataModule, FiveKImgDataModule]:
         match config.data.type:
-            case DataType.huawei:
-                return HuaweiImgDataModule(
+            case DataType.volga2k:
+                return Valga2kImgDataModule(
                     train_a=config.data.train.source,
                     train_b=config.data.train.target,
                     val_a=config.data.val.source,
@@ -23,8 +23,8 @@ class DataSelector:
                     val_batch_size=config.pipeline.params.val_batch_size,
                     test_batch_size=config.pipeline.params.test_batch_size,
                 )
-            case DataType.huawei_unpaired:
-                return HuaweiImgUnpairedDataModule(
+            case DataType.volga2k_unpaired:
+                return Valga2kImgUnpairedDataModule(
                     train_a=config.data.train.source,
                     train_b=config.data.train.target,
                     val_a=config.data.val.source,

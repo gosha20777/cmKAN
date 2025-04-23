@@ -167,10 +167,10 @@ experiments/
 .DS_Store
 
 # experiment configs
-!huawei_supervised.example.yaml
-!huawei_unsupervised_pretrain.example.yaml
-!huawei_unsupervised.example.yaml
-!huawei_paired.example.yaml
+!volga2k_supervised.example.yaml
+!volga2k_unsupervised_pretrain.example.yaml
+!volga2k_unsupervised.example.yaml
+!volga2k_paired.example.yaml
 !five_k_supervised.example.yaml
 !iphone2samsung_unsupervised_pretrain.example.yaml
 !iphone2samsung_unsupervised.example.yaml

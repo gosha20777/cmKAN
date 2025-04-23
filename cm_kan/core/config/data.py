@@ -3,8 +3,8 @@ from enum import Enum
 
 
 class DataType(str, Enum):
-    huawei = 'huawei'
-    huawei_unpaired = 'huawei_unpaired'
+    volga2k = 'volga2k'
+    volga2k_unpaired = 'volga2k_unpaired'
     five_k = 'five_k'  
 
 
@@ -14,7 +14,7 @@ class DataPathes(BaseModel):
 
 
 class Data(BaseModel):
-    type: DataType = DataType.huawei
+    type: DataType = DataType.volga2k
     train: DataPathes
     val: DataPathes
     test: DataPathes

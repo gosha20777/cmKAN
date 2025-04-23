@@ -16,7 +16,7 @@ from cm_kan.core import Logger
 from cm_kan.ml.transforms.pair_trransform import PairTransform
 
 
-class HuaweiImgUnpairedDataModule(L.LightningDataModule):
+class Valga2kImgUnpairedDataModule(L.LightningDataModule):
     def __init__(
             self,
             train_a: str,
