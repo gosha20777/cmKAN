@@ -43,12 +43,12 @@ We provide pre-trained models for the following tasks:
 
 | Dataset | Task | Training Config | Checkpoint | 
 | ------- | ---- | ---------------- | ---------- |
-| [Volga2K](https://huggingface.co/datasets/gosha20777/volga2k) | sRGB-to-sRGB | [unsupervised]() | [checkpoint](https://github.com/gosha20777/cmKAN/releases) |
-| [Volga2K](https://huggingface.co/datasets/gosha20777/volga2k) | sRGB-to-sRGB | [supervised]() | [checkpoint](https://github.com/gosha20777/cmKAN/releases) |
-| [Volga2K](https://huggingface.co/datasets/gosha20777/volga2k) | sRGB-to-sRGB | [pair-based]() | [checkpoint](https://github.com/gosha20777/cmKAN/releases) |
-| [Adobe 5K](https://pan.baidu.com/share/init?surl=CsQRFsEPZCSjkT3Z1X_B1w) (password: `5fyk`)| sRGB-to-sRGB | [supervised]() | [checkpoint](https://github.com/gosha20777/cmKAN/releases) |
-| [Samsung2Iphone](https://github.com/mahmoudnafifi/raw2raw) | raw-to-raw | [unsupervised]() | [checkpoint](https://github.com/gosha20777/cmKAN/releases) |
-| [Zurich raw-to-sRGB](https://people.ee.ethz.ch/~ihnatova/pynet.html) | raw-to-sRGB | [supervised]() | [checkpoint](https://github.com/gosha20777/cmKAN/releases) |
+| [Volga2K](https://huggingface.co/datasets/gosha20777/volga2k) | sRGB-to-sRGB | [unsupervised](configs/) | [checkpoint](https://github.com/gosha20777/cmKAN/releases) |
+| [Volga2K](https://huggingface.co/datasets/gosha20777/volga2k) | sRGB-to-sRGB | [supervised](configs/) | [checkpoint](https://github.com/gosha20777/cmKAN/releases) |
+| [Volga2K](https://huggingface.co/datasets/gosha20777/volga2k) | sRGB-to-sRGB | [pair-based](configs/) | [checkpoint](https://github.com/gosha20777/cmKAN/releases) |
+| [Adobe 5K](https://pan.baidu.com/share/init?surl=CsQRFsEPZCSjkT3Z1X_B1w) (password: `5fyk`)| sRGB-to-sRGB | [supervised](configs/) | [checkpoint](https://github.com/gosha20777/cmKAN/releases) |
+| [Samsung2Iphone](https://github.com/mahmoudnafifi/raw2raw) | raw-to-raw | [unsupervised](configs/) | [checkpoint](https://github.com/gosha20777/cmKAN/releases) |
+| [Zurich raw-to-sRGB](https://people.ee.ethz.ch/~ihnatova/pynet.html) | raw-to-sRGB | [supervised](configs/) | [checkpoint](https://github.com/gosha20777/cmKAN/releases) |
 
 
 
