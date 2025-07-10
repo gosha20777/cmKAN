@@ -177,3 +177,4 @@ experiments/
 !aim_supervised.example.yaml
 
 debug.ipynb
+requirements-dev.txt

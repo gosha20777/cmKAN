@@ -1,0 +1,11 @@
+torch==2.7.1 ; sys_platform == 'darwin'
+torchaudio==2.7.1 ; sys_platform == 'darwin'
+torchvision==0.22.1 ; sys_platform == 'darwin'
+pydantic==2.11.7
+PyYAML==6.0.2
+pytest==8.4.1
+lightning==2.5.2
+opencv-python==4.12.0.88
+rich==14.0.0
+einops==0.8.1
+imageio==2.37.0
