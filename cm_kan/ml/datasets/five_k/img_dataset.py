@@ -7,7 +7,13 @@ from cm_kan.ml.transforms.pair_trransform import PairTransform
 
 
 class Image2ImageDataset(Dataset):
-    def __init__(self, paths_a: List[str], paths_b: List[str], transform: Compose, p_transform: PairTransform = None) -> None:
+    def __init__(
+        self,
+        paths_a: List[str],
+        paths_b: List[str],
+        transform: Compose,
+        p_transform: PairTransform = None,
+    ) -> None:
         assert len(paths_a) == len(paths_b), "paths_a and paths_b must have same length"
         self.paths_a = paths_a
         self.paths_b = paths_b

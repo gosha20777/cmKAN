@@ -6,17 +6,17 @@ import colour
 
 def normalize(image: np.ndarray):
     """input image normalized [0,255]"""
-    return image / 255.
+    return image / 255.0
 
 
 def denormalize(image: np.ndarray):
     """input image normalized [0,1]"""
-    return image * 255.
+    return image * 255.0
 
 
 def validate(image: np.ndarray):
-    image[image > 1.] = 1.
-    image[image < 0.] = 0.
+    image[image > 1.0] = 1.0
+    image[image < 0.0] = 0.0
     return image
 
 

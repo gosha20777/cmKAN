@@ -1,9 +1,5 @@
 import torch
 from torch.utils.data import Dataset
-from cm_kan.ml.utils.io import read_rgb_image
-from typing import List
-from torchvision.transforms.v2 import Compose
-from cm_kan.ml.transforms.pair_trransform import PairTransform
 
 
 class PairDataset(Dataset):

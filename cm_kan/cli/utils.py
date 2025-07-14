@@ -3,7 +3,6 @@ from concurrent.futures import Executor
 
 
 def concurrent(f):
-
     @wraps(f)
     def _impl(executor: Executor, *args, **kwargs):
         task = executor.submit(f, *args, **kwargs)

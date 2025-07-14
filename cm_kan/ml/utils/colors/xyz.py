@@ -20,7 +20,9 @@ def rgb_to_xyz(image: torch.Tensor) -> torch.Tensor:
         raise TypeError(f"Input type is not a Tensor. Got {type(image)}")
 
     if len(image.shape) < 3 or image.shape[-3] != 3:
-        raise ValueError(f"Input size must have a shape of (*, 3, H, W). Got {image.shape}")
+        raise ValueError(
+            f"Input size must have a shape of (*, 3, H, W). Got {image.shape}"
+        )
 
     r: torch.Tensor = image[..., 0, :, :]
     g: torch.Tensor = image[..., 1, :, :]
@@ -52,15 +54,23 @@ def xyz_to_rgb(image: torch.Tensor) -> torch.Tensor:
         raise TypeError(f"Input type is not a Tensor. Got {type(image)}")
 
     if len(image.shape) < 3 or image.shape[-3] != 3:
-        raise ValueError(f"Input size must have a shape of (*, 3, H, W). Got {image.shape}")
+        raise ValueError(
+            f"Input size must have a shape of (*, 3, H, W). Got {image.shape}"
+        )
 
     x: torch.Tensor = image[..., 0, :, :]
     y: torch.Tensor = image[..., 1, :, :]
     z: torch.Tensor = image[..., 2, :, :]
 
-    r: torch.Tensor = 3.2404813432005266 * x + -1.5371515162713185 * y + -0.4985363261688878 * z
-    g: torch.Tensor = -0.9692549499965682 * x + 1.8759900014898907 * y + 0.0415559265582928 * z
-    b: torch.Tensor = 0.0556466391351772 * x + -0.2040413383665112 * y + 1.0573110696453443 * z
+    r: torch.Tensor = (
+        3.2404813432005266 * x + -1.5371515162713185 * y + -0.4985363261688878 * z
+    )
+    g: torch.Tensor = (
+        -0.9692549499965682 * x + 1.8759900014898907 * y + 0.0415559265582928 * z
+    )
+    b: torch.Tensor = (
+        0.0556466391351772 * x + -0.2040413383665112 * y + 1.0573110696453443 * z
+    )
 
     out: torch.Tensor = torch.stack([r, g, b], dim=-3)
 

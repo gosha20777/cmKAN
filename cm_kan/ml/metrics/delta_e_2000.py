@@ -5,10 +5,7 @@ from torchmetrics import Metric
 from ..utils.colors import rgb_to_lab
 
 
-def _tsplit(
-    a: torch.Tensor,
-    dtype: torch.dtype = torch.float64
-) -> torch.Tensor:
+def _tsplit(a: torch.Tensor, dtype: torch.dtype = torch.float64) -> torch.Tensor:
     """
     Reshape input image [b, c, h, w] or color feature [b, f, c] to [L, a, b] format.
 
@@ -61,14 +58,12 @@ def _tsplit(
     if a.ndim <= 3:
         return torch.transpose(a, a.ndim - 1, 0)
 
-    return torch.transpose(
-        a,
-        1,
-        0
-    )
+    return torch.transpose(a, 1, 0)
 
 
-def _select(conditions: List[torch.Tensor], values: List[torch.Tensor], default: int = 0) -> torch.Tensor:
+def _select(
+    conditions: List[torch.Tensor], values: List[torch.Tensor], default: int = 0
+) -> torch.Tensor:
     """
     Return a torch.Tensor drawn from elements in choicelist, depending on conditions.
 
@@ -292,13 +287,19 @@ def _delta_E_CIE2000(
 class DeltaE(Metric):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.add_state("correct", default=torch.tensor(0, dtype=torch.float64), dist_reduce_fx="sum")
-        self.add_state("total", default=torch.tensor(0, dtype=torch.long), dist_reduce_fx="sum")
+        self.add_state(
+            "correct",
+            default=torch.tensor(0, dtype=torch.float64),
+            dist_reduce_fx="sum",
+        )
+        self.add_state(
+            "total", default=torch.tensor(0, dtype=torch.long), dist_reduce_fx="sum"
+        )
 
     def update(self, preds: torch.Tensor, target: torch.Tensor) -> None:
         if preds.shape != target.shape:
             raise ValueError("preds and target must have the same shape")
-        
+
         preds = rgb_to_lab(preds)
         target = rgb_to_lab(target)
         de = torch.mean(_delta_E_CIE2000(preds, target), dtype=torch.float64)

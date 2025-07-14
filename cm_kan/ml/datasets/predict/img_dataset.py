@@ -6,7 +6,6 @@ from typing import List
 from torchvision.transforms.v2 import Compose
 
 
-
 class ImagePredictDataset(Dataset):
     def __init__(self, paths: List[str], transform: Compose) -> None:
         self.paths = paths
@@ -22,10 +21,12 @@ class ImagePredictDataset(Dataset):
 
     def __len__(self) -> int:
         return len(self.paths)
-    
+
 
 class ImagePairedPredictDataset(Dataset):
-    def __init__(self, paths: List[str], ref_paths: List[str], transform: Compose) -> None:
+    def __init__(
+        self, paths: List[str], ref_paths: List[str], transform: Compose
+    ) -> None:
         assert len(paths) == len(ref_paths), "paths and ref_paths must have same length"
         self.paths = paths
         self.transform = transform
@@ -37,9 +38,9 @@ class ImagePairedPredictDataset(Dataset):
 
         ref_path = self.ref_paths[idx]
         y = read_rgb_image(ref_path)
-        
+
         path = os.path.basename(path)
-        
+
         if self.transform is not None:
             x = self.transform(x)
             y = self.transform(y)

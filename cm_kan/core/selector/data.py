@@ -48,4 +48,4 @@ class DataSelector:
                     test_batch_size=config.pipeline.params.test_batch_size,
                 )
             case _:
-                raise ValueError(f'Unupported data type f{config.data.type}')
+                raise ValueError(f"Unupported data type f{config.data.type}")

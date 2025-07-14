@@ -50,7 +50,11 @@ class RichHelpFormatter(optparse.HelpFormatter):
     """
 
     def __init__(
-        self, indent_increment: int, max_help_position: int, width: int | None, short_first: int
+        self,
+        indent_increment: int,
+        max_help_position: int,
+        width: int | None,
+        short_first: int,
     ) -> None:
         super().__init__(indent_increment, max_help_position, width, short_first)
         self._console: r.Console | None = None
@@ -222,7 +226,9 @@ class RichHelpFormatter(optparse.HelpFormatter):
         for option in self.parser.option_list:
             if option.help == optparse.SUPPRESS_HELP:
                 continue
-            opt_str = option._short_opts[0] if option._short_opts else option.get_opt_string()
+            opt_str = (
+                option._short_opts[0] if option._short_opts else option.get_opt_string()
+            )
             option_usage = r.Text("[").append(opt_str, "optparse.args")
             if option.takes_value():
                 metavar = option.metavar or option.dest.upper()  # type: ignore[union-attr]
@@ -256,7 +262,9 @@ class IndentedRichHelpFormatter(RichHelpFormatter):
         return r.Text(usage, spans=spans)
 
     def rich_format_heading(self, heading: str) -> r.Text:
-        text = r.Text(" " * self.current_indent).append(f"{heading}:", "optparse.groups")
+        text = r.Text(" " * self.current_indent).append(
+            f"{heading}:", "optparse.groups"
+        )
         return text + r.Text("\n")
 
 
@@ -292,9 +300,13 @@ if __name__ == "__main__":
         epilog=":link: https://github.com/hamdanal/rich-argparse#optparse-support.",
         usage=GENERATE_USAGE,
     )
-    parser.add_option("--formatter", metavar="rich", help="A piece of :cake: isn't it? :wink:")
     parser.add_option(
-        "--styles", metavar="yours", help="Not your style? No biggie, change it :sunglasses:"
+        "--formatter", metavar="rich", help="A piece of :cake: isn't it? :wink:"
+    )
+    parser.add_option(
+        "--styles",
+        metavar="yours",
+        help="Not your style? No biggie, change it :sunglasses:",
     )
     parser.add_option(
         "--highlights",
@@ -302,15 +314,24 @@ if __name__ == "__main__":
         help=":clap: --highlight :clap: all :clap: the :clap: regexes :clap:",
     )
     parser.add_option(
-        "--syntax", action="store_true", help="`backquotes` may be bold, but they are :muscle:"
+        "--syntax",
+        action="store_true",
+        help="`backquotes` may be bold, but they are :muscle:",
     )
     parser.add_option(
-        "-s", "--long", metavar="METAVAR", help="That's a lot of metavars for an option!"
+        "-s",
+        "--long",
+        metavar="METAVAR",
+        help="That's a lot of metavars for an option!",
     )
 
-    group = parser.add_option_group("Magic", description=":sparkles: :sparkles: :sparkles:")
+    group = parser.add_option_group(
+        "Magic", description=":sparkles: :sparkles: :sparkles:"
+    )
     group.add_option(
         "--treasure", action="store_false", help="Mmm, did you find the --hidden :gem:?"
     )
-    group.add_option("--hidden", action="store_false", dest="treasure", help=optparse.SUPPRESS_HELP)
+    group.add_option(
+        "--hidden", action="store_false", dest="treasure", help=optparse.SUPPRESS_HELP
+    )
     parser.print_help()

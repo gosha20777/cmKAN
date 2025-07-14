@@ -3,9 +3,9 @@ from enum import Enum
 
 
 class DataType(str, Enum):
-    volga2k = 'volga2k'
-    volga2k_unpaired = 'volga2k_unpaired'
-    five_k = 'five_k'  
+    volga2k = "volga2k"
+    volga2k_unpaired = "volga2k_unpaired"
+    five_k = "five_k"
 
 
 class DataPathes(BaseModel):

@@ -1,12 +1,13 @@
 import torch
-import torch.nn as nn
 from cm_kan.core import Logger
-from .cm_kan import CmKAN, LightCmKAN
+from .cm_kan import CmKAN
 from ..layers import PatchDiscriminator
 
 
 class CycleCmKAN(torch.nn.Module):
-    def __init__(self, in_dims, out_dims, grid_size, spline_order, residual_std, grid_range):
+    def __init__(
+        self, in_dims, out_dims, grid_size, spline_order, residual_std, grid_range
+    ):
         super(CycleCmKAN, self).__init__()
 
         Logger.info(f"CycleCmKAN: in_dims={in_dims}, out_dims={out_dims}")

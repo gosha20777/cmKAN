@@ -1,4 +1,3 @@
-from typing import Union, cast
 import torch
 
 
@@ -21,7 +20,9 @@ def rgb_to_bgr(image: torch.Tensor) -> torch.Tensor:
         raise TypeError(f"Input type is not a Tensor. Got {type(image)}")
 
     if len(image.shape) < 3 or image.shape[-3] != 3:
-        raise ValueError(f"Input size must have a shape of (*, 3, H, W).Got {image.shape}")
+        raise ValueError(
+            f"Input size must have a shape of (*, 3, H, W).Got {image.shape}"
+        )
 
     return bgr_to_rgb(image)
 
@@ -43,7 +44,9 @@ def bgr_to_rgb(image: torch.Tensor) -> torch.Tensor:
         raise TypeError(f"Input type is not a Tensor. Got {type(image)}")
 
     if len(image.shape) < 3 or image.shape[-3] != 3:
-        raise ValueError(f"Input size must have a shape of (*, 3, H, W).Got {image.shape}")
+        raise ValueError(
+            f"Input size must have a shape of (*, 3, H, W).Got {image.shape}"
+        )
 
     # flip image channels
     out: torch.Tensor = image.flip(-3)
@@ -69,9 +72,13 @@ def rgb_to_linear_rgb(image: torch.Tensor) -> torch.Tensor:
         raise TypeError(f"Input type is not a Tensor. Got {type(image)}")
 
     if len(image.shape) < 3 or image.shape[-3] != 3:
-        raise ValueError(f"Input size must have a shape of (*, 3, H, W).Got {image.shape}")
+        raise ValueError(
+            f"Input size must have a shape of (*, 3, H, W).Got {image.shape}"
+        )
 
-    lin_rgb: torch.Tensor = torch.where(image > 0.04045, torch.pow(((image + 0.055) / 1.055), 2.4), image / 12.92)
+    lin_rgb: torch.Tensor = torch.where(
+        image > 0.04045, torch.pow(((image + 0.055) / 1.055), 2.4), image / 12.92
+    )
 
     return lin_rgb
 
@@ -93,11 +100,15 @@ def linear_rgb_to_rgb(image: torch.Tensor) -> torch.Tensor:
         raise TypeError(f"Input type is not a Tensor. Got {type(image)}")
 
     if len(image.shape) < 3 or image.shape[-3] != 3:
-        raise ValueError(f"Input size must have a shape of (*, 3, H, W).Got {image.shape}")
+        raise ValueError(
+            f"Input size must have a shape of (*, 3, H, W).Got {image.shape}"
+        )
 
     threshold = 0.0031308
     rgb: torch.Tensor = torch.where(
-        image > threshold, 1.055 * torch.pow(image.clamp(min=threshold), 1 / 2.4) - 0.055, 12.92 * image
+        image > threshold,
+        1.055 * torch.pow(image.clamp(min=threshold), 1 / 2.4) - 0.055,
+        12.92 * image,
     )
 
     return rgb

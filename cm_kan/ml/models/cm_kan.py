@@ -5,9 +5,11 @@ from cm_kan.core import Logger
 
 
 class CmKAN(torch.nn.Module):
-    """ Input features BxCxN """
+    """Input features BxCxN"""
 
-    def __init__(self, in_dims, out_dims, grid_size, spline_order, residual_std, grid_range):
+    def __init__(
+        self, in_dims, out_dims, grid_size, spline_order, residual_std, grid_range
+    ):
         super(CmKAN, self).__init__()
 
         Logger.info(f"CmKAN: in_dims={in_dims}, out_dims={out_dims}")
@@ -17,12 +19,15 @@ class CmKAN(torch.nn.Module):
         self.layers = []
         for in_dim, out_dim in cm_kan_size:
             self.layers.append(
-                CmKANLayer(in_channels=in_dim,
-                         out_channels=out_dim,
-                         grid_size=grid_size,
-                         spline_order=spline_order,
-                         residual_std=residual_std,
-                         grid_range=grid_range))
+                CmKANLayer(
+                    in_channels=in_dim,
+                    out_channels=out_dim,
+                    grid_size=grid_size,
+                    spline_order=spline_order,
+                    residual_std=residual_std,
+                    grid_range=grid_range,
+                )
+            )
 
         self.layers = nn.ModuleList(self.layers)
 
@@ -33,9 +38,11 @@ class CmKAN(torch.nn.Module):
 
 
 class LightCmKAN(torch.nn.Module):
-    """ Input features BxCxN """
+    """Input features BxCxN"""
 
-    def __init__(self, in_dims, out_dims, grid_size, spline_order, residual_std, grid_range):
+    def __init__(
+        self, in_dims, out_dims, grid_size, spline_order, residual_std, grid_range
+    ):
         super(LightCmKAN, self).__init__()
 
         Logger.info(f"LightCmKAN: in_dims={in_dims}, out_dims={out_dims}")
@@ -45,12 +52,15 @@ class LightCmKAN(torch.nn.Module):
         self.layers = []
         for in_dim, out_dim in cm_kan_size:
             self.layers.append(
-                LightCmKANLayer(in_channels=in_dim,
-                         out_channels=out_dim,
-                         grid_size=grid_size,
-                         spline_order=spline_order,
-                         residual_std=residual_std,
-                         grid_range=grid_range))
+                LightCmKANLayer(
+                    in_channels=in_dim,
+                    out_channels=out_dim,
+                    grid_size=grid_size,
+                    spline_order=spline_order,
+                    residual_std=residual_std,
+                    grid_range=grid_range,
+                )
+            )
 
         self.layers = nn.ModuleList(self.layers)
 

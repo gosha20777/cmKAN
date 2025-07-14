@@ -1,20 +1,13 @@
 import argparse
 import yaml
 from ..core import Logger
-from ..core.selector import (
-    ModelSelector,
-    DataSelector,
-    PipelineSelector
-)
+from ..core.selector import ModelSelector, DataSelector, PipelineSelector
 from ..core.config import Config
 from ..core.config.pipeline import PipelineType
 import lightning as L
 import os
 from lightning.pytorch.callbacks import (
-    ModelCheckpoint,
-    RichModelSummary,
     RichProgressBar,
-    LearningRateMonitor,
 )
 from cm_kan.ml.callbacks import GenerateCallback
 from lightning.pytorch.loggers import CSVLogger
@@ -28,14 +21,16 @@ def add_parser(subparser: argparse) -> None:
         formatter_class=cli.ArgumentDefaultsRichHelpFormatter,
     )
     parser.add_argument(
-        "-c", "--config",
+        "-c",
+        "--config",
         type=str,
         help="Path to config file",
         default="config.yaml",
         required=False,
     )
     parser.add_argument(
-        "-w", "--weights",
+        "-w",
+        "--weights",
         type=str,
         help="Path to checkpoint file in the experiment folder",
         default="logs/checkpoints/last.ckpt",
@@ -47,24 +42,26 @@ def add_parser(subparser: argparse) -> None:
 
 def test(args: argparse.Namespace) -> None:
     Logger.info(f"Loading config from '{args.config}'")
-    with open(args.config, 'r', encoding='utf-8') as f:
+    with open(args.config, "r", encoding="utf-8") as f:
         config = yaml.safe_load(f)
 
     config = Config(**config)
     inference_mode = config.pipeline.type != PipelineType.pair_based
     if not inference_mode:
-        Logger.info(f'Inference mode: {inference_mode}. Use optimization while testing.')
-    Logger.info('Config:')
+        Logger.info(
+            f"Inference mode: {inference_mode}. Use optimization while testing."
+        )
+    Logger.info("Config:")
     config.print()
-    
+
     dm = DataSelector.select(config)
     model = ModelSelector.select(config)
     pipeline = PipelineSelector.select(config, model)
 
     logger = CSVLogger(
         save_dir=os.path.join(config.save_dir, config.experiment),
-        name='logs',
-        version='',
+        name="logs",
+        version="",
     )
 
     trainer = L.Trainer(
@@ -87,7 +84,7 @@ def test(args: argparse.Namespace) -> None:
         ckpt_path = None
 
     trainer.test(
-        model=pipeline, 
+        model=pipeline,
         datamodule=dm,
         ckpt_path=ckpt_path,
     )

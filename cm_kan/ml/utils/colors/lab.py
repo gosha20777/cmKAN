@@ -28,7 +28,9 @@ def rgb_to_lab(image: torch.Tensor) -> torch.Tensor:
         raise TypeError(f"Input type is not a torch.Tensor. Got {type(image)}")
 
     if len(image.shape) < 3 or image.shape[-3] != 3:
-        raise ValueError(f"Input size must have a shape of (*, 3, H, W). Got {image.shape}")
+        raise ValueError(
+            f"Input size must have a shape of (*, 3, H, W). Got {image.shape}"
+        )
 
     # Convert from sRGB to Linear RGB
     lin_rgb = rgb_to_linear_rgb(image)
@@ -36,7 +38,9 @@ def rgb_to_lab(image: torch.Tensor) -> torch.Tensor:
     xyz_im: torch.Tensor = rgb_to_xyz(lin_rgb)
 
     # normalize for D65 white point
-    xyz_ref_white = torch.tensor([0.95047, 1.0, 1.08883], device=xyz_im.device, dtype=xyz_im.dtype)[..., :, None, None]
+    xyz_ref_white = torch.tensor(
+        [0.95047, 1.0, 1.08883], device=xyz_im.device, dtype=xyz_im.dtype
+    )[..., :, None, None]
     xyz_normalized = torch.div(xyz_im, xyz_ref_white)
 
     threshold = 0.008856
@@ -79,7 +83,9 @@ def lab_to_rgb(image: torch.Tensor, clip: bool = True) -> torch.Tensor:
         raise TypeError(f"Input type is not a torch.Tensor. Got {type(image)}")
 
     if len(image.shape) < 3 or image.shape[-3] != 3:
-        raise ValueError(f"Input size must have a shape of (*, 3, H, W). Got {image.shape}")
+        raise ValueError(
+            f"Input size must have a shape of (*, 3, H, W). Got {image.shape}"
+        )
 
     L: torch.Tensor = image[..., 0, :, :]
     a: torch.Tensor = image[..., 1, :, :]
@@ -100,7 +106,9 @@ def lab_to_rgb(image: torch.Tensor, clip: bool = True) -> torch.Tensor:
     xyz = torch.where(fxyz > 0.2068966, power, scale)
 
     # For D65 white point
-    xyz_ref_white = torch.tensor([0.95047, 1.0, 1.08883], device=xyz.device, dtype=xyz.dtype)[..., :, None, None]
+    xyz_ref_white = torch.tensor(
+        [0.95047, 1.0, 1.08883], device=xyz.device, dtype=xyz.dtype
+    )[..., :, None, None]
     xyz_im = xyz * xyz_ref_white
 
     rgbs_im: torch.Tensor = xyz_to_rgb(xyz_im)

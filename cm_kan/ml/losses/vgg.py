@@ -13,23 +13,24 @@ def _normalize_batch(batch):
 
 class VggLoss(nn.Module):
     """VGG/Perceptual Loss
-    
+
     Parameters
     ----------
     conv_index : str
         Convolutional layer in VGG model to use as perceptual output
 
     """
-    def __init__(self, conv_index: str = '22'):
+
+    def __init__(self, conv_index: str = "22"):
         super(VggLoss, self).__init__()
         vgg_features = torchvision.models.vgg19(pretrained=True).features
         modules = [m for m in vgg_features]
-        
-        if conv_index == '22':
+
+        if conv_index == "22":
             self.vgg = nn.Sequential(*modules[:8]).eval()
-        elif conv_index == '54':
+        elif conv_index == "54":
             self.vgg = nn.Sequential(*modules[:35]).eval()
-        
+
         self.vgg = self.vgg.requires_grad_(False)
         self.vgg = self.vgg.train(False)
 
@@ -49,7 +50,7 @@ class VggLoss(nn.Module):
         loss : torch.Tensor
             Perceptual VGG loss between sr and hr
 
-        """ 
+        """
         vgg_sr = self.vgg(_normalize_batch(pred))
         vgg_hr = self.vgg(_normalize_batch(y))
         return F.mse_loss(vgg_sr, vgg_hr)

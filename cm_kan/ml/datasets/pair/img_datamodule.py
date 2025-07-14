@@ -1,19 +1,15 @@
-import os
-import random
 import torch
 import lightning as L
 from torch.utils.data import DataLoader
-from typing import Tuple
 from .img_dataset import PairDataset
-from cm_kan.core import Logger
 
 
 class PairDataModule(L.LightningDataModule):
     def __init__(
-            self,
-            x: torch.Tensor,
-            y: torch.Tensor,
-            num_iters: int = 10,
+        self,
+        x: torch.Tensor,
+        y: torch.Tensor,
+        num_iters: int = 10,
     ) -> None:
         super().__init__()
         self.test_dataset = None
@@ -25,16 +21,22 @@ class PairDataModule(L.LightningDataModule):
         self.y = y
 
     def setup(self, stage: str) -> None:
-        if stage == 'fit' or stage is None:
+        if stage == "fit" or stage is None:
             self.train_dataset = PairDataset(
-                self.x, self.y, self.num_iters,
+                self.x,
+                self.y,
+                self.num_iters,
             )
             self.val_dataset = PairDataset(
-                self.x, self.y, self.num_iters,
+                self.x,
+                self.y,
+                self.num_iters,
             )
-        if stage == 'test' or stage is None:
+        if stage == "test" or stage is None:
             self.test_dataset = PairDataset(
-                self.x, self.y, self.num_iters,
+                self.x,
+                self.y,
+                self.num_iters,
             )
 
     def train_dataloader(self) -> DataLoader:

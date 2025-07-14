@@ -13,14 +13,16 @@ from cm_kan.ml.models import (
 
 
 class PipelineSelector:
-    def select(config: Config, model: Union[CmKAN, LightCmKAN]) -> Union[SupervisedPipeline, UnsupervisedPipeline, PairBasedPipeline]:
+    def select(
+        config: Config, model: Union[CmKAN, LightCmKAN]
+    ) -> Union[SupervisedPipeline, UnsupervisedPipeline, PairBasedPipeline]:
         match config.pipeline.type:
             case PipelineType.supervised:
                 return SupervisedPipeline(
                     model=model,
                     optimiser=config.pipeline.params.optimizer,
                     lr=config.pipeline.params.lr,
-                    weight_decay=config.pipeline.params.weight_decay
+                    weight_decay=config.pipeline.params.weight_decay,
                 )
             case PipelineType.unsupervised:
                 return UnsupervisedPipeline(
@@ -40,4 +42,4 @@ class PipelineSelector:
                     finetune_iters=config.pipeline.params.finetune_iters,
                 )
             case _:
-                raise ValueError(f'Unupported pipeline type f{config.pipeline.type}')
+                raise ValueError(f"Unupported pipeline type f{config.pipeline.type}")

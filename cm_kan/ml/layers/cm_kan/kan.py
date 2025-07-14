@@ -1,18 +1,22 @@
 # Python libraries
-from typing import List, Callable
-from typing_extensions import Self
+from typing import List
 
 # Installed libraries
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 
 # User-defined libraries
 from .bspline import compute_bspline
 
 
-def generate_control_points(low_bound: float, up_bound: float, in_dim: int,
-                            out_dim: int, spline_order: int, grid_size: int):
+def generate_control_points(
+    low_bound: float,
+    up_bound: float,
+    in_dim: int,
+    out_dim: int,
+    spline_order: int,
+    grid_size: int,
+):
     """
     Generate a vector of {grid_size} equally spaced points in the interval [low_bound, up_bound] and broadcast (out_dim, in_dim) copies.
     To account for B-splines of order k, using the same spacing, generate an additional
@@ -50,7 +54,7 @@ class KANActivation:
         self.grid_size = grid_size
         self.grid_range = grid_range
 
-        self.coef_shape =(out_dim, in_dim, grid_size + spline_order)
+        self.coef_shape = (out_dim, in_dim, grid_size + spline_order)
 
         # Generate (out, in) copies of equally spaced control points on [a, b]
         self.grid = generate_control_points(
@@ -103,8 +107,13 @@ class WeightedResidualLayer:
         self.univariate_weight_shape = (out_dim, in_dim)
         self.residual_weight_shape = (out_dim, in_dim)
 
-    def __call__(self, x: torch.Tensor, post_acts: torch.Tensor,
-                 univariate_weight, residual_weight) -> torch.Tensor:
+    def __call__(
+        self,
+        x: torch.Tensor,
+        post_acts: torch.Tensor,
+        univariate_weight,
+        residual_weight,
+    ) -> torch.Tensor:
         """
         Given the input to a KAN layer and the activation (e.g. spline(x)),
         compute a weighted residual.
@@ -147,15 +156,13 @@ class KANLayer:
         )
 
         # Define the residual connection layer used to compute \phi
-        self.residual_layer = WeightedResidualLayer(in_dim, out_dim,
-                                                    residual_std)
+        self.residual_layer = WeightedResidualLayer(in_dim, out_dim, residual_std)
 
-    def __call__(self, x: torch.Tensor, coef, univariate_weight,
-                 residual_weight) -> torch.Tensor:
-
+    def __call__(
+        self, x: torch.Tensor, coef, univariate_weight, residual_weight
+    ) -> torch.Tensor:
         spline = self.activation_fn(x, coef)
-        phi = self.residual_layer(x, spline, univariate_weight,
-                                  residual_weight)
+        phi = self.residual_layer(x, spline, univariate_weight, residual_weight)
 
         out = torch.sum(phi, dim=-1)
 

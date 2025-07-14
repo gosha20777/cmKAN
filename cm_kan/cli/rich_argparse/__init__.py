@@ -9,22 +9,10 @@ import sys
 from . import _lazy_rich as r
 from ._common import _HIGHLIGHTS, _fix_legacy_win_text, _rich_fill, _rich_wrap
 
-TYPE_CHECKING = False
-if TYPE_CHECKING:
-    from argparse import Action, ArgumentParser, Namespace, _MutuallyExclusiveGroup
-    from collections.abc import Callable, Iterable, Iterator, MutableMapping, Sequence
-    from typing import Any, ClassVar
-    from typing_extensions import Self
-del TYPE_CHECKING
-
-__all__ = [
-    "RichHelpFormatter",
-    "RawDescriptionRichHelpFormatter",
-    "RawTextRichHelpFormatter",
-    "ArgumentDefaultsRichHelpFormatter",
-    "MetavarTypeRichHelpFormatter",
-    "HelpPreviewAction",
-]
+from argparse import Action, ArgumentParser, Namespace, _MutuallyExclusiveGroup
+from collections.abc import Callable, Iterable, Iterator, MutableMapping, Sequence
+from typing import Any, ClassVar
+from typing_extensions import Self
 
 
 class RichHelpFormatter(argparse.HelpFormatter):
@@ -116,7 +104,10 @@ class RichHelpFormatter(argparse.HelpFormatter):
 
     class _Section(argparse.HelpFormatter._Section):
         def __init__(
-            self, formatter: RichHelpFormatter, parent: Self | None, heading: str | None = None
+            self,
+            formatter: RichHelpFormatter,
+            parent: Self | None,
+            heading: str | None = None,
         ) -> None:
             if heading is not argparse.SUPPRESS and heading is not None:
                 heading = f"{type(formatter).group_name_formatter(heading)}:"
@@ -127,7 +118,9 @@ class RichHelpFormatter(argparse.HelpFormatter):
             if parent is not None:
                 parent.rich_items.append(self)
 
-        def _render_items(self, console: r.Console, options: r.ConsoleOptions) -> r.RenderResult:
+        def _render_items(
+            self, console: r.Console, options: r.ConsoleOptions
+        ) -> r.RenderResult:
             if not self.rich_items:
                 return
             generated_options = options.update(no_wrap=True, overflow="ignore")
@@ -141,11 +134,15 @@ class RichHelpFormatter(argparse.HelpFormatter):
                 else:  # argparse generated rich renderable
                     yield from console.render(item, generated_options)
 
-        def _render_actions(self, console: r.Console, options: r.ConsoleOptions) -> r.RenderResult:
+        def _render_actions(
+            self, console: r.Console, options: r.ConsoleOptions
+        ) -> r.RenderResult:
             if not self.rich_actions:
                 return
             options = options.update(no_wrap=True, overflow="ignore")
-            help_pos = min(self.formatter._action_max_length + 2, self.formatter._max_help_position)
+            help_pos = min(
+                self.formatter._action_max_length + 2, self.formatter._max_help_position
+            )
             help_width = max(self.formatter._width - help_pos, 11)
             indent = r.Text(" " * help_pos)
             for action_header, action_help in self.rich_actions:
@@ -153,7 +150,9 @@ class RichHelpFormatter(argparse.HelpFormatter):
                     # no help, yield the header and finish
                     yield from console.render(action_header, options)
                     continue
-                action_help_lines = self.formatter._rich_split_lines(action_help, help_width)
+                action_help_lines = self.formatter._rich_split_lines(
+                    action_help, help_width
+                )
                 if len(action_header) > help_pos - 2:
                     # the header is too long, put it on its own line
                     yield from console.render(action_header, options)
@@ -166,7 +165,9 @@ class RichHelpFormatter(argparse.HelpFormatter):
                     yield from console.render(indent + line, options)
             yield ""
 
-        def __rich_console__(self, console: r.Console, options: r.ConsoleOptions) -> r.RenderResult:
+        def __rich_console__(
+            self, console: r.Console, options: r.ConsoleOptions
+        ) -> r.RenderResult:
             if not self.rich_items and not self.rich_actions:
                 return  # empty section
             if self.heading is not argparse.SUPPRESS and self.heading is not None:
@@ -174,7 +175,9 @@ class RichHelpFormatter(argparse.HelpFormatter):
             yield from self._render_items(console, options)
             yield from self._render_actions(console, options)
 
-    def __rich_console__(self, console: r.Console, options: r.ConsoleOptions) -> r.RenderResult:
+    def __rich_console__(
+        self, console: r.Console, options: r.ConsoleOptions
+    ) -> r.RenderResult:
         with console.use_theme(r.Theme(self.styles)):
             root = console.render(self._root_section, options.update_width(self._width))
             new_line = r.Segment.line()
@@ -187,7 +190,9 @@ class RichHelpFormatter(argparse.HelpFormatter):
                             yield new_line
                         add_empty_line = False
                         yield from line_segments[:-i]
-                        yield r.Segment(stripped, style=segment.style, control=segment.control)
+                        yield r.Segment(
+                            stripped, style=segment.style, control=segment.control
+                        )
                         yield new_line
                         break
                 else:  # empty line
@@ -215,10 +220,14 @@ class RichHelpFormatter(argparse.HelpFormatter):
         if usage is argparse.SUPPRESS:
             return
         if prefix is None:
-            prefix = self._format_usage(usage="", actions=(), groups=(), prefix=None).rstrip("\n")
+            prefix = self._format_usage(
+                usage="", actions=(), groups=(), prefix=None
+            ).rstrip("\n")
         prefix_end = ": " if prefix.endswith(": ") else ""
         prefix = prefix[: len(prefix) - len(prefix_end)]
-        prefix = r.strip_control_codes(type(self).group_name_formatter(prefix)) + prefix_end
+        prefix = (
+            r.strip_control_codes(type(self).group_name_formatter(prefix)) + prefix_end
+        )
 
         usage_spans = [r.Span(0, len(prefix.rstrip()), "argparse.groups")]
         usage_text = r.strip_control_codes(
@@ -228,16 +237,22 @@ class RichHelpFormatter(argparse.HelpFormatter):
             prog = r.strip_control_codes(f"{self._prog}")
             if actions:
                 prog_start = usage_text.index(prog, len(prefix))
-                usage_spans.append(r.Span(prog_start, prog_start + len(prog), "argparse.prog"))
+                usage_spans.append(
+                    r.Span(prog_start, prog_start + len(prog), "argparse.prog")
+                )
             actions_start = len(prefix) + len(prog) + 1
             try:
-                spans = list(self._rich_usage_spans(usage_text, actions_start, actions=actions))
+                spans = list(
+                    self._rich_usage_spans(usage_text, actions_start, actions=actions)
+                )
             except ValueError:
                 spans = []
             usage_spans.extend(spans)
             rich_usage = r.Text(usage_text)
         elif self.usage_markup:  # treat user provided usage as markup
-            usage_spans.extend(self._rich_prog_spans(prefix + r.Text.from_markup(usage).plain))
+            usage_spans.extend(
+                self._rich_prog_spans(prefix + r.Text.from_markup(usage).plain)
+            )
             rich_usage = r.Text.from_markup(usage_text)
             usage_spans.extend(rich_usage.spans)
             rich_usage.spans.clear()
@@ -283,7 +298,9 @@ class RichHelpFormatter(argparse.HelpFormatter):
         positionals: list[Action] = []
         for action in actions:
             if action.help is not argparse.SUPPRESS:
-                options.append(action) if action.option_strings else positionals.append(action)
+                options.append(action) if action.option_strings else positionals.append(
+                    action
+                )
         pos = start
 
         def find_span(_string: str) -> tuple[int, int]:
@@ -308,7 +325,9 @@ class RichHelpFormatter(argparse.HelpFormatter):
             pos = end + 1
             if action.nargs != 0:
                 default_metavar = self._get_default_metavar_for_optional(action)
-                for metavar_part, colorize in self._rich_metavar_parts(action, default_metavar):
+                for metavar_part, colorize in self._rich_metavar_parts(
+                    action, default_metavar
+                ):
                     start, end = find_span(metavar_part)
                     if colorize:
                         yield r.Span(start, end, "argparse.metavar")
@@ -316,7 +335,9 @@ class RichHelpFormatter(argparse.HelpFormatter):
             pos = end + 1
         for action in positionals:  # positionals come at the end
             default_metavar = self._get_default_metavar_for_positional(action)
-            for metavar_part, colorize in self._rich_metavar_parts(action, default_metavar):
+            for metavar_part, colorize in self._rich_metavar_parts(
+                action, default_metavar
+            ):
                 start, end = find_span(metavar_part)
                 if colorize:
                     yield r.Span(start, end, "argparse.args")
@@ -339,7 +360,9 @@ class RichHelpFormatter(argparse.HelpFormatter):
                 ("]", False),
             )
         elif action.nargs == argparse.ZERO_OR_MORE:
-            if sys.version_info < (3, 9) or len(get_metavar(1)) == 2:  # pragma: <3.9 cover
+            if (
+                sys.version_info < (3, 9) or len(get_metavar(1)) == 2
+            ):  # pragma: <3.9 cover
                 metavar = get_metavar(2)
                 # '[%s [%s ...]]' % metavar
                 yield from (
@@ -474,17 +497,25 @@ class RichHelpFormatter(argparse.HelpFormatter):
         indent = r.Text(" " * self._current_indent)
         return self._rich_fill_text(rich_text, text_width, indent)
 
-    def _rich_format_action(self, action: Action) -> Iterator[tuple[r.Text, r.Text | None]]:
+    def _rich_format_action(
+        self, action: Action
+    ) -> Iterator[tuple[r.Text, r.Text | None]]:
         header = self._rich_format_action_invocation(action)
         header.pad_left(self._current_indent)
-        help = self._rich_expand_help(action) if action.help and action.help.strip() else None
+        help = (
+            self._rich_expand_help(action)
+            if action.help and action.help.strip()
+            else None
+        )
         yield header, help
         for subaction in self._iter_indented_subactions(action):
             yield from self._rich_format_action(subaction)
 
     def _rich_format_action_invocation(self, action: Action) -> r.Text:
         if not action.option_strings:
-            return r.Text().append(self._format_action_invocation(action), style="argparse.args")
+            return r.Text().append(
+                self._format_action_invocation(action), style="argparse.args"
+            )
         else:
             action_header = r.Text(", ").join(
                 r.Text(o, "argparse.args") for o in action.option_strings
@@ -501,7 +532,10 @@ class RichHelpFormatter(argparse.HelpFormatter):
         return _rich_wrap(self.console, self._rich_whitespace_sub(text), width)
 
     def _rich_fill_text(self, text: r.Text, width: int, indent: r.Text) -> r.Text:
-        return _rich_fill(self.console, self._rich_whitespace_sub(text), width, indent) + "\n\n"
+        return (
+            _rich_fill(self.console, self._rich_whitespace_sub(text), width, indent)
+            + "\n\n"
+        )
 
 
 class RawDescriptionRichHelpFormatter(RichHelpFormatter):
@@ -518,11 +552,15 @@ class RawTextRichHelpFormatter(RawDescriptionRichHelpFormatter):
         return text.split()
 
 
-class ArgumentDefaultsRichHelpFormatter(argparse.ArgumentDefaultsHelpFormatter, RichHelpFormatter):
+class ArgumentDefaultsRichHelpFormatter(
+    argparse.ArgumentDefaultsHelpFormatter, RichHelpFormatter
+):
     """Rich help message formatter which adds default values to argument help."""
 
 
-class MetavarTypeRichHelpFormatter(argparse.MetavarTypeHelpFormatter, RichHelpFormatter):
+class MetavarTypeRichHelpFormatter(
+    argparse.MetavarTypeHelpFormatter, RichHelpFormatter
+):
     """Rich help message formatter which uses the argument 'type' as the default
     metavar value (instead of the argument 'dest').
     """
@@ -541,7 +579,9 @@ class HelpPreviewAction(argparse.Action):
         path: str | None = None,
         export_kwds: MutableMapping[str, Any] | None = None,
     ) -> None:
-        super().__init__(option_strings, dest, nargs="?", const=path, default=default, help=help)
+        super().__init__(
+            option_strings, dest, nargs="?", const=path, default=default, help=help
+        )
         self.export_kwds = export_kwds or {}
 
     def __call__(
@@ -557,7 +597,9 @@ class HelpPreviewAction(argparse.Action):
         if not isinstance(path, str):
             parser.exit(1, "error: help preview path must be a string\n")
         if not path.endswith((".svg", ".html", ".txt")):
-            parser.exit(1, "error: help preview path must end with .svg, .html, or .txt\n")
+            parser.exit(
+                1, "error: help preview path must end with .svg, .html, or .txt\n"
+            )
 
         text = r.Text.from_ansi(parser.format_help())
         console = r.Console(record=True)

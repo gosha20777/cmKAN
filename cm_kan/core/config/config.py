@@ -12,13 +12,13 @@ import yaml
 
 
 class Config(BaseModel):
-    experiment: str = 'volga2k_supervised'
-    save_dir: str = 'experiments'
+    experiment: str = "volga2k_supervised"
+    save_dir: str = "experiments"
     resume: bool = False
     model: Model
     data: Data
     pipeline: Pipeline
-    accelerator: Union[str,int] = 'gpu'
+    accelerator: Union[str, int] = "gpu"
 
     def print(self) -> None:
         str = yaml.dump(self.model_dump())

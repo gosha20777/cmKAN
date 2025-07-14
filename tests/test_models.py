@@ -3,7 +3,7 @@ import torch
 
 
 def test_cm_kan_create():
-    ''' Test the creation of the CmKAN model '''
+    """Test the creation of the CmKAN model"""
     model = CmKAN(
         in_dims=[3],
         out_dims=[3],
@@ -16,7 +16,7 @@ def test_cm_kan_create():
 
 
 def test_cm_kan_forward():
-    ''' Test the forward pass of the CmKAN model '''
+    """Test the forward pass of the CmKAN model"""
     model = CmKAN(
         in_dims=[3],
         out_dims=[3],
@@ -32,7 +32,7 @@ def test_cm_kan_forward():
 
 
 def test_light_cm_kan_create():
-    ''' Test the creation of the LightCmKAN model '''
+    """Test the creation of the LightCmKAN model"""
     model = LightCmKAN(
         in_dims=[3],
         out_dims=[3],
@@ -45,7 +45,7 @@ def test_light_cm_kan_create():
 
 
 def test_light_cm_kan_forward():
-    ''' Test the forward pass of the LightCmKAN model '''
+    """Test the forward pass of the LightCmKAN model"""
     model = LightCmKAN(
         in_dims=[3],
         out_dims=[3],

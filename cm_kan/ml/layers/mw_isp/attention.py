@@ -11,10 +11,10 @@ class CALayer(nn.Module):
 
         self.avg_pool = nn.AdaptiveAvgPool2d(1)
         self.conv_du = nn.Sequential(
-            nn.Conv2d(channel, channel//reduction, 1, padding=0, bias=True),
+            nn.Conv2d(channel, channel // reduction, 1, padding=0, bias=True),
             nn.ReLU(inplace=True),
-            nn.Conv2d(channel//reduction, channel, 1, padding=0, bias=True),
-            nn.Sigmoid()
+            nn.Conv2d(channel // reduction, channel, 1, padding=0, bias=True),
+            nn.Sigmoid(),
         )
 
     def forward(self, x):
@@ -25,7 +25,9 @@ class CALayer(nn.Module):
 
 class ChannelPool(nn.Module):
     def forward(self, x):
-        return torch.cat((torch.max(x,1)[0].unsqueeze(1), torch.mean(x,1).unsqueeze(1)), dim=1)
+        return torch.cat(
+            (torch.max(x, 1)[0].unsqueeze(1), torch.mean(x, 1).unsqueeze(1)), dim=1
+        )
 
 
 class spatial_attn_layer(nn.Module):
@@ -38,7 +40,7 @@ class spatial_attn_layer(nn.Module):
         # import pdb;pdb.set_trace()
         x_compress = self.compress(x)
         x_out = self.spatial(x_compress)
-        scale = torch.sigmoid(x_out) # broadcasting
+        scale = torch.sigmoid(x_out)  # broadcasting
         return x * scale
 
 
@@ -49,8 +51,9 @@ class CUCALayer(nn.Module):
     def __init__(self, channel=64, min=0, max=None):
         super(CUCALayer, self).__init__()
 
-        self.attention = nn.Conv2d(channel, channel, 1, padding=0,
-                                   groups=channel, bias=False)
+        self.attention = nn.Conv2d(
+            channel, channel, 1, padding=0, groups=channel, bias=False
+        )
         self.min, self.max = min, max
         nn.init.uniform_(self.attention.weight, 0, 1)
 

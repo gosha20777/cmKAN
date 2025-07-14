@@ -4,10 +4,10 @@ from typing import Union
 
 
 class PipelineType(str, Enum):
-    supervised   = 'supervised'
-    unsupervised = 'unsupervised'
-    pair_based   = 'pair_based'
-    
+    supervised = "supervised"
+    unsupervised = "unsupervised"
+    pair_based = "pair_based"
+
 
 class PipelineParams(BaseModel):
     lr: float = 1e-3
@@ -20,7 +20,7 @@ class PipelineParams(BaseModel):
 
 
 class DefaultPipelineParams(PipelineParams):
-    optimizer: str = 'adam'
+    optimizer: str = "adam"
     weight_decay: float = 0.0
 
 

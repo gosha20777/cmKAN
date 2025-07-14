@@ -13,9 +13,9 @@ class ConcatBlock(nn.Module):
         return output
 
     def __repr__(self):
-        return self.sub.__repr__() + '_concat'
-    
-    
+        return self.sub.__repr__() + "_concat"
+
+
 class ShortcutBlock(nn.Module):
     def __init__(self, submodule):
         super(ShortcutBlock, self).__init__()
@@ -27,7 +27,7 @@ class ShortcutBlock(nn.Module):
         return output
 
     def __repr__(self):
-        tmpstr = 'Identity + \n|'
-        modstr = self.sub.__repr__().replace('\n', '\n|')
+        tmpstr = "Identity + \n|"
+        modstr = self.sub.__repr__().replace("\n", "\n|")
         tmpstr = tmpstr + modstr
         return tmpstr

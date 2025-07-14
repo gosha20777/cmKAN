@@ -1,10 +1,7 @@
 import argparse
 import yaml
 from ..core import Logger
-from ..core.selector import (
-    ModelSelector,
-    PipelineSelector
-)
+from ..core.selector import ModelSelector, PipelineSelector
 from ..core.config import Config
 from ..core.config.pipeline import PipelineType
 from ..ml.datasets import ImgPredictDataModule
@@ -26,42 +23,48 @@ def add_parser(subparser: argparse) -> None:
         formatter_class=cli.ArgumentDefaultsRichHelpFormatter,
     )
     parser.add_argument(
-        "-c", "--config",
+        "-c",
+        "--config",
         type=str,
         help="Path to config file",
         default="config.yaml",
         required=False,
     )
     parser.add_argument(
-        "-w", "--weights",
+        "-w",
+        "--weights",
         type=str,
         help="Path to checkpoint file in the experiment folder",
         default="logs/checkpoints/last.ckpt",
         required=False,
     )
     parser.add_argument(
-        "-i", "--input",
+        "-i",
+        "--input",
         type=str,
         help="Path to the input image folder",
         default="data/samples/input",
         required=False,
     )
     parser.add_argument(
-        "-r", "--reference",
+        "-r",
+        "--reference",
         type=str,
         help="Path to the reference image folder (only for pair-based pipeline)",
         default="data/samples/reference",
         required=False,
     )
     parser.add_argument(
-        "-o", "--output",
+        "-o",
+        "--output",
         type=str,
         help="Path to the output folder, will be created if not exists",
         default="data/samples/output",
         required=False,
     )
     parser.add_argument(
-        "-bs", "--batch_size",
+        "-bs",
+        "--batch_size",
         type=int,
         help="Batch size for prediction",
         default=1,
@@ -73,23 +76,31 @@ def add_parser(subparser: argparse) -> None:
 
 def predict(args: argparse.Namespace) -> None:
     if not os.path.isdir(args.input):
-        raise ValueError(f"Incorrect input path '{args.input}'. It should be a directory.")
+        raise ValueError(
+            f"Incorrect input path '{args.input}'. It should be a directory."
+        )
 
     Logger.info(f"Loading config from '{args.config}'")
-    with open(args.config, 'r', encoding='utf-8') as f:
+    with open(args.config, "r", encoding="utf-8") as f:
         config = yaml.safe_load(f)
 
     config = Config(**config)
 
-    if config.pipeline.type == PipelineType.pair_based and not os.path.isdir(args.reference):
-        raise ValueError(f"Incorrect reference path '{args.reference}'. It should be a directory.")
+    if config.pipeline.type == PipelineType.pair_based and not os.path.isdir(
+        args.reference
+    ):
+        raise ValueError(
+            f"Incorrect reference path '{args.reference}'. It should be a directory."
+        )
 
     inference_mode = config.pipeline.type != PipelineType.pair_based
     if not inference_mode:
-        Logger.info(f'Inference mode: {inference_mode}. Use optimization while testing.')
-    Logger.info('Config:')
+        Logger.info(
+            f"Inference mode: {inference_mode}. Use optimization while testing."
+        )
+    Logger.info("Config:")
     config.print()
-    
+
     dm = ImgPredictDataModule(
         input_path=args.input,
         reference_path=args.reference,
@@ -101,8 +112,8 @@ def predict(args: argparse.Namespace) -> None:
 
     logger = CSVLogger(
         save_dir=os.path.join(config.save_dir, config.experiment),
-        name='logs',
-        version='',
+        name="logs",
+        version="",
     )
 
     trainer = L.Trainer(
@@ -115,7 +126,7 @@ def predict(args: argparse.Namespace) -> None:
             RichProgressBar(),
             ImagePredictionWriter(
                 output_dir=os.path.join(args.output),
-                write_interval='batch',
+                write_interval="batch",
             ),
         ],
         inference_mode=inference_mode,
@@ -127,8 +138,5 @@ def predict(args: argparse.Namespace) -> None:
         raise ValueError(f"Checkpoint file '{ckpt_path}' does not exist.")
 
     trainer.predict(
-        model=pipeline, 
-        datamodule=dm,
-        ckpt_path=ckpt_path,
-        return_predictions=False
+        model=pipeline, datamodule=dm, ckpt_path=ckpt_path, return_predictions=False
     )
