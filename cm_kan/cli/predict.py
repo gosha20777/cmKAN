@@ -50,7 +50,9 @@ def add_parser(subparser: argparse) -> None:
         "-r",
         "--reference",
         type=str,
-        help="Path to the reference image folder (only for pair-based pipeline)",
+        help=(
+            "Path to the reference image folder (only for pair-based pipeline)"
+        ),
         default="data/samples/reference",
         required=False,
     )
@@ -90,13 +92,17 @@ def predict(args: argparse.Namespace) -> None:
         args.reference
     ):
         raise ValueError(
-            f"Incorrect reference path '{args.reference}'. It should be a directory."
+            (
+                f"Incorrect reference path '{args.reference}'. "
+                "It should be a directory."
+            )
         )
 
     inference_mode = config.pipeline.type != PipelineType.pair_based
     if not inference_mode:
         Logger.info(
-            f"Inference mode: {inference_mode}. Use optimization while testing."
+            f"Inference mode: {inference_mode}. "
+            "Use optimization while testing."
         )
     Logger.info("Config:")
     config.print()
@@ -138,5 +144,8 @@ def predict(args: argparse.Namespace) -> None:
         raise ValueError(f"Checkpoint file '{ckpt_path}' does not exist.")
 
     trainer.predict(
-        model=pipeline, datamodule=dm, ckpt_path=ckpt_path, return_predictions=False
+        model=pipeline,
+        datamodule=dm,
+        ckpt_path=ckpt_path,
+        return_predictions=False,
     )

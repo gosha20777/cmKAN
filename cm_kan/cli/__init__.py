@@ -1,9 +1,15 @@
 from pathlib import Path
 import importlib
 from .rich_argparse import (
-    RichHelpFormatter, 
+    RichHelpFormatter,
     ArgumentDefaultsRichHelpFormatter,
 )
+
+__all__ = [
+    "register_parsers",
+    "RichHelpFormatter",
+    "ArgumentDefaultsRichHelpFormatter",
+]
 
 
 def register_parsers(subparser):

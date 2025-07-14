@@ -43,7 +43,10 @@ def add_parser(subparser: argparse) -> None:
     parser.add_argument(
         "--use_feature",
         action="store_true",
-        help="Generate dataset with *.npy color features (e.g. for classic pair based approaches)",
+        help=(
+            "Generate dataset with *.npy color features "
+            "(e.g. for classic pair based approaches)"
+        ),
         default=False,
         required=False,
     )
@@ -82,9 +85,10 @@ def add_parser(subparser: argparse) -> None:
     parser.set_defaults(func=generate_dataset)
 
 
-def parallel(f):
+def parallel(f) -> callable:
     def wrapped(*args, **kwargs):
-        return asyncio.get_event_loop().run_in_executor(None, f, *args, **kwargs)
+        return asyncio.get_event_loop().run_in_executor(
+            None, f, *args, **kwargs)
 
     return wrapped
 
@@ -96,7 +100,7 @@ def _crop_image(image: np.ndarray, crop_size: int) -> List[np.ndarray]:
     crop_list = []
     for y in range(crop_size, h, crop_size):
         for x in range(crop_size, w, crop_size):
-            crop = image[y - crop_size : y, x - crop_size : x, 0:c]
+            crop = image[y-crop_size:y, x-crop_size:x, 0:c]
             crop_list.append(crop)
     return crop_list
 
@@ -112,7 +116,7 @@ def _prepare_data(
     progress: Progress,
     pb: TaskID,
     args,
-):
+) -> None:
     source_path = input_src_img_dir.joinpath(name)
     if not source_path.is_file():
         raise Exception("No source file")
@@ -186,12 +190,15 @@ def generate_dataset(args: argparse.Namespace) -> None:
 
     n = len(files)
     split = np.cumsum([int(0.7 * n), int(0.1 * n)])
-    train_files = files[: split[0]]
-    val_files = files[split[0] : split[1]]
-    test_files = files[split[1] :]
+    train_files = files[:split[0]]
+    val_files = files[split[0]:split[1]]
+    test_files = files[split[1]:]
 
     with Progress() as progress:
-        train_pb = progress.add_task("[cyan]Train images", total=len(train_files))
+        train_pb = progress.add_task(
+            "[cyan]Train images",
+            total=len(train_files)
+        )
         val_pb = progress.add_task("[cyan]Val images", total=len(val_files))
         test_pb = progress.add_task("[cyan]Test images", total=len(test_files))
 

@@ -51,7 +51,9 @@ def add_parser(subparser: argparse) -> None:
 
 def parallel(f):
     def wrapped(*args, **kwargs):
-        return asyncio.get_event_loop().run_in_executor(None, f, *args, **kwargs)
+        return asyncio.get_event_loop().run_in_executor(
+            None, f, *args, **kwargs
+        )
 
     return wrapped
 
@@ -63,7 +65,7 @@ def _crop_image(image: np.ndarray, crop_size: int) -> List[np.ndarray]:
     crop_list = []
     for y in range(crop_size, h, crop_size):
         for x in range(crop_size, w, crop_size):
-            crop = image[y - crop_size : y, x - crop_size : x, 0:c]
+            crop = image[y-crop_size:y, x-crop_size:x, 0:c]
             crop_list.append(crop)
     return crop_list
 
@@ -102,14 +104,18 @@ def _prepare_val_data(
     crop_list = _crop_image(image, args.crop_size)
     for i, image in enumerate(crop_list):
         save_name = name.replace("_src_m.npy", f"_{i}.jpg")
-        imageio.v3.imwrite(os.path.join(save_val_src_img_dir, save_name), image)
+        imageio.v3.imwrite(
+            os.path.join(save_val_src_img_dir, save_name), image
+        )
 
     ref_name = name.replace("_src_m.npy", "_ref_m.jpg")
     image = imageio.v3.imread(os.path.join(input_ref_img_dir, ref_name))
     crop_list = _crop_image(image, args.crop_size)
     for i, image in enumerate(crop_list):
         save_name = name.replace("_src_m.npy", f"_{i}.jpg")
-        imageio.v3.imwrite(os.path.join(save_val_ref_img_dir, save_name), image)
+        imageio.v3.imwrite(
+            os.path.join(save_val_ref_img_dir, save_name), image
+        )
 
     progress.update(val_pb, advance=1)
 
@@ -130,14 +136,18 @@ def _prepare_test_data(
     crop_list = _crop_image(image, args.crop_size)
     for i, image in enumerate(crop_list):
         save_name = name.replace("_src_m.npy", f"_{i}.jpg")
-        imageio.v3.imwrite(os.path.join(save_test_src_img_dir, save_name), image)
+        imageio.v3.imwrite(
+            os.path.join(save_test_src_img_dir, save_name), image
+        )
 
     ref_name = name.replace("_src_m.npy", "_ref_m.jpg")
     image = imageio.v3.imread(os.path.join(input_ref_img_dir, ref_name))
     crop_list = _crop_image(image, args.crop_size)
     for i, image in enumerate(crop_list):
         save_name = name.replace("_src_m.npy", f"_{i}.jpg")
-        imageio.v3.imwrite(os.path.join(save_test_ref_img_dir, save_name), image)
+        imageio.v3.imwrite(
+            os.path.join(save_test_ref_img_dir, save_name), image
+        )
 
     progress.update(test_pb, advance=1)
 

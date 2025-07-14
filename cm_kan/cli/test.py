@@ -49,7 +49,10 @@ def test(args: argparse.Namespace) -> None:
     inference_mode = config.pipeline.type != PipelineType.pair_based
     if not inference_mode:
         Logger.info(
-            f"Inference mode: {inference_mode}. Use optimization while testing."
+            (
+                f"Inference mode: {inference_mode}. "
+                "Use optimization while testing."
+            )
         )
     Logger.info("Config:")
     config.print()

@@ -1,4 +1,18 @@
 [flake8]
 per-file-ignores =
     # imported but unused
-    cm_kan/cli/__init__.py: F401
+    *__init__.py: F401
+
+exclude =
+    .git,
+    .venv,
+    __pycache__,
+    .pytest_cache,
+    .mypy_cache,
+    .ruff_cache,
+    .vscode,
+    .idea,
+    *.egg-info,
+    build,
+    dist,
+    cm_kan/cli/rich_argparse

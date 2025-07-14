@@ -82,5 +82,7 @@ def train(args: argparse.Namespace) -> None:
     trainer.fit(
         model=pipeline,
         datamodule=dm,
-        ckpt_path=ckpt_path if config.resume and os.path.exists(ckpt_path) else None,
+        ckpt_path=(
+            ckpt_path if config.resume and os.path.exists(ckpt_path) else None
+        ),
     )
